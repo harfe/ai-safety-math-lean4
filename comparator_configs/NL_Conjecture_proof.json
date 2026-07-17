@@ -1,0 +1,19 @@
+{
+    "challenge_module": "AISafetyMath.Targets.NL_Conjecture",
+    "solution_module": "AISafetyMath.Solutions.NL_Conjecture",
+    "theorem_names": [
+      "NaturalLatents.ok_forkDistr",
+      "NaturalLatents.ok_chainDistr",
+      "NaturalLatents.forkDensity_is_chainDensity",
+      "NaturalLatents.condEntropy_nonneg",
+      "NaturalLatents.condEntropy_lt_top",
+      "NaturalLatents.conjecture_exact_case",
+      "NaturalLatents.conjecture_solution"
+    ],
+    "definition_names": [
+      "NaturalLatents.forkDistr",
+      "NaturalLatents.chainDistr"
+    ],
+    "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+    "enable_nanoda": false
+}

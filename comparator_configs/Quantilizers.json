@@ -1,0 +1,19 @@
+{
+    "challenge_module": "AISafetyMath.Targets.Quantilizers",
+    "solution_module": "AISafetyMath.Solutions.Quantilizers",
+    "theorem_names": [
+      "Quantilizers.ok_mySortedActionFun",
+      "Quantilizers.ok_quantilizer",
+      "Quantilizers.volume_topQ",
+      "Quantilizers.quantilizer_one_eq_gamma",
+      "Quantilizers.utility_quantilizer_antitone",
+      "Quantilizers.cost_bound",
+      "Quantilizers.quantilizer_optimality"
+    ],
+    "definition_names": [
+      "Quantilizers.mySortedActionFun",
+      "Quantilizers.quantilizer"
+    ],
+    "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+    "enable_nanoda": false
+}

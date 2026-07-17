@@ -1,0 +1,17 @@
+{
+    "challenge_module": "AISafetyMath.Targets.IB_Basics",
+    "solution_module": "AISafetyMath.Solutions.IB_Basics",
+    "theorem_names": [
+      "IB.convergence_iff_weak", 
+      "IB.probConvex_iff",
+      "IB.infraKernelOfEnvironments_continuous"
+    ],
+    "definition_names": [
+      "IB.Credal.probConvex_sInter",
+      "IB.Credal.probConvexHull_nonempty",
+      "IB.Credal.probConvexHull_convex",
+      "IB.Credal.probConvex_closure"
+    ],
+    "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+    "enable_nanoda": false
+}

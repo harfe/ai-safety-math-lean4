@@ -1,0 +1,22 @@
+{
+    "challenge_module": "AISafetyMath.Targets.IB_RL",
+    "solution_module": "AISafetyMath.Solutions.IB_RL",
+    "theorem_names": [
+      "IB_RL.totalLoss_summable", 
+      "IB_RL.totalLoss_constant",
+      "IB_RL.measureAfterHist_marginal_fst",
+      "IB_RL.trajectoryMeasure_cylinder",
+      "IB_RL.expectedTotalLoss_integrable",
+      "IB_RL.expectedTotalLoss_mem_unitInterval",
+      "IB_RL.expectedTotalLoss_constant",
+      "IB_RL.exists_optimal_policy",
+      "IB_RL.regret_of_optimal",
+      "IB_RL.regret_nonneg",
+      "IB_RL.discount_atTop",
+      "IB_RL.discount_atTop_neBot",
+      "IB_RL.bayes_integrand_integrable",
+      "IB_RL.bayes_optimal_learns_class"
+    ],
+    "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+    "enable_nanoda": false
+}
