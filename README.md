@@ -38,7 +38,6 @@ These proofs are often AI-generated (but verified).
 This section assumes you have already [installed Lean](https://lean-lang.org/install/).
 
 Run `lake exe cache get` to avoid compiling the entirety of Mathlib.
-You can then in
 You can then run `lake build`, which would build the target (but not solution) files.
 Note  that the target files contain a lot of `sorry`.
 
@@ -60,12 +59,3 @@ $ lake env comparator comparator_configs/Quantilizers.json
 ```
 where `Quantilizers.json` can be replaced with any `.json` file in that directory.
 
-## Avoiding Mathlib compilation
-
-Run
-```
-lake exe cache get
-```
-to download the pre-compiled cache before running comparator or building anything.
-That way you avoid compiling the entirety of Mathlib,
-which can take a very long time.
