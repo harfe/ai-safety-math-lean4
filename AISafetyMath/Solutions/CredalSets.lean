@@ -613,7 +613,8 @@ lemma hausdorffDist_lp_probConvexHull_le (s t : Set (Δ X)) :
       rw [Measure.finsetSum_apply]
       simp only [Measure.smul_apply, measure_univ, ENNReal.smul_def, smul_eq_mul, mul_one]
       rw [← ENNReal.ofNNReal_finsetSum, hw, ENNReal.coe_one]
-    refine ⟨lpEquiv ⟨∑ i, w i • (q i).toMeasure, hprob⟩, Set.mem_image_of_mem _ ?_, ?_⟩
+    set ν : Δ X := ⟨∑ i, w i • (q i).toMeasure, hprob⟩ with hν
+    refine ⟨lpEquiv ν, Set.mem_image_of_mem _ ?_, ?_⟩
     · rw [probConvexHull_eq]
       exact ⟨ι, ‹Fintype ι›, w, q, hqv, hw, rfl⟩
     · have hcore : levyProkhorovEDist (∑ i, w i • (p i).toMeasure) (∑ i, w i • (q i).toMeasure)

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+####
+# run `comparator` on all files in comparator_config/claimed
+####
+
 # script fails if a single command fails
 set -eu
 
@@ -16,10 +20,10 @@ which comparator
 which lean4export
 
 
-test -f comparator_configs/successful
+test -f comparator_configs/claimed
 
 
-# main loop: go through lines in comparator_configs/successful
+# main loop: go through lines in comparator_configs/claimed
 # each line should be a json file
 while read line; do
   fname="comparator_configs/$line"
@@ -35,5 +39,5 @@ while read line; do
   echo "$fname passed"
   echo ""
 
-done <comparator_configs/successful
+done <comparator_configs/claimed
 

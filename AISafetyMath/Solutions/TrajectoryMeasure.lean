@@ -212,7 +212,7 @@ lemma measureAfterHist_singleton (π : Policy A O) (μ : Environment A O)
   obtain ⟨a, o⟩ := z
   have hprod : ({(a, o)} : Set (A × O)) = {a} ×ˢ {o} := by
     ext ⟨a', o'⟩; simp [Prod.ext_iff]
-  haveI hk : IsMarkovKernel
+  have hk : IsMarkovKernel
       ({ toFun := fun a' => (μ h a').toMeasure, measurable' := .of_discrete } : Kernel A O) :=
     ⟨fun a' => (μ h a').2⟩
   rw [measureAfterHist, hprod,
@@ -327,7 +327,7 @@ lemma trajectoryMeasure_cylinder (π : Policy A O) (μ : Environment A O)
     have hset : {d : Destiny A O | initialSegment A O d (z :: hs).length = z :: hs}
         = Preorder.frestrictLe (π := fun _ : ℕ => A × O) hs.length ⁻¹' {ω} := by
       ext d
-      simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_singleton_iff]
+      simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_singleton_iff]
       constructor
       · intro hd
         funext i
@@ -485,7 +485,7 @@ lemma measureAfterHist_apply_dist_le (μ : Environment A O) (h : History A O) (z
   obtain ⟨a₀, o₀⟩ := z
   have hprod : ({(a₀, o₀)} : Set (A × O)) = {a₀} ×ˢ {o₀} := by
     ext ⟨a, o⟩; simp [Prod.ext_iff]
-  haveI hk : IsMarkovKernel
+  have hk : IsMarkovKernel
       ({ toFun := fun a => (μ h a).toMeasure, measurable' := .of_discrete } : Kernel A O) :=
     ⟨fun a => (μ h a).2⟩
   have key : ∀ ρ : Policy A O, (measureAfterHist ρ μ h) {(a₀, o₀)}
@@ -567,7 +567,7 @@ lemma marginal_succ_dist_le (μ : Environment A O) (k : ℕ)
       (((trajectoryMeasure ρ μ).map (Preorder.frestrictLe k))
         {Preorder.frestrictLe₂ (π := fun _ => A × O) (Nat.le_succ k) ω}).toReal ≤ 1 := by
     intro ρ
-    haveI : IsProbabilityMeasure ((trajectoryMeasure ρ μ).map (Preorder.frestrictLe k)) :=
+    have : IsProbabilityMeasure ((trajectoryMeasure ρ μ).map (Preorder.frestrictLe k)) :=
       Measure.isProbabilityMeasure_map (Preorder.measurable_frestrictLe _).aemeasurable
     simpa using ENNReal.toReal_mono ENNReal.one_ne_top prob_le_one
   have hT1 : ∀ ρ : Policy A O,
@@ -901,7 +901,7 @@ lemma hausdorffDist_image_le_biSup {ι M : Type*} [PseudoMetricSpace M] [Compact
     exact Real.iSup_le (fun _ => le_trans (hCdist μ) (le_max_left _ _)) (le_max_right _ _)
   have hle : ∀ μ ∈ E, dist (f μ) (g μ) ≤ ⨆ μ ∈ E, dist (f μ) (g μ) := by
     intro μ hμ
-    haveI : Nonempty (μ ∈ E) := ⟨hμ⟩
+    have : Nonempty (μ ∈ E) := ⟨hμ⟩
     calc dist (f μ) (g μ) = ⨆ _ : μ ∈ E, dist (f μ) (g μ) := (ciSup_const).symm
       _ ≤ _ := le_ciSup hbdd μ
   obtain ⟨μ₀, hμ₀⟩ := hE

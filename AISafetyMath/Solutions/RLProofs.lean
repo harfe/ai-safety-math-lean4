@@ -120,7 +120,7 @@ lemma measureAfterHist_barycentric (μ : Environment A O) (π : Policy A O) (h�
       measureAfterHist p μ h {(a', o')}
         = ((μ h a' : Measure O) {o'}) * ((p h {a'} : ℝ≥0) : ℝ≥0∞) := by
     intro p a' o'
-    haveI hk : IsMarkovKernel
+    have hk : IsMarkovKernel
         ({ toFun := fun a => (μ h a).toMeasure,
            measurable' := Measurable.of_discrete } : Kernel A O) :=
       ⟨fun a => (μ h a).2⟩
@@ -147,7 +147,7 @@ lemma measureAfterHist_barycentric (μ : Environment A O) (π : Policy A O) (h�
         = ((μ h a' : Measure O) {o'}) * (((π h₀ {x} : ℝ≥0) : ℝ≥0∞) *
             (((Function.update π h₀ ⟨Measure.dirac x, inferInstance⟩) h {a'} : ℝ≥0) : ℝ≥0∞)) := by
     intro x
-    rw [Measure.smul_apply, key _ a' o', smul_eq_mul]; ring
+    rw [Measure.smul_apply]; unfold Policy at key; rw [key _ a' o', smul_eq_mul]; ring
   simp_rw [hfac, ← Finset.mul_sum]
   congr 1
   by_cases hh : h = h₀
@@ -157,7 +157,10 @@ lemma measureAfterHist_barycentric (μ : Environment A O) (π : Policy A O) (h�
         (((Function.update π h ⟨Measure.dirac x, inferInstance⟩ h) {a'} : ℝ≥0) : ℝ≥0∞)
           = if x = a' then 1 else 0 := by
       intro x
-      rw [Function.update_self, ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure]
+      set v : ProbabilityMeasure A := ⟨Measure.dirac x, inferInstance⟩ with hv
+      have hself : Function.update π h v h = v := by
+        unfold Policy at π; exact Function.update_self h v π
+      rw [hself, ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure, hv]
       change (Measure.dirac x) {a'} = if x = a' then 1 else 0
       rw [MeasureTheory.Measure.dirac_apply' _ (measurableSet_singleton a')]
       simp [Set.indicator_apply]
@@ -165,7 +168,10 @@ lemma measureAfterHist_barycentric (μ : Environment A O) (π : Policy A O) (h�
     rw [Finset.sum_ite_eq' Finset.univ a' (fun x => ((π h {x} : ℝ≥0) : ℝ≥0∞))]
     simp
   · -- Away from `h₀`, the substitution leaves `π h` untouched; factor it out and use `hwsum`.
-    simp_rw [Function.update_of_ne hh, ← Finset.sum_mul, hwsum, one_mul]
+    have hupd : ∀ i : A,
+        Function.update π h₀ (⟨Measure.dirac i, inferInstance⟩ : ProbabilityMeasure A) h = π h := by
+      intro i; unfold Policy at π; exact Function.update_of_ne hh _ π
+    simp_rw [hupd, ← Finset.sum_mul, hwsum, one_mul]
 
 open Classical in
 set_option linter.unusedSectionVars false in
@@ -177,7 +183,10 @@ lemma measureAfterHist_update_of_ne (μ : Environment A O) (π : Policy A O) (h�
     (a : A) (hh : h ≠ h₀) :
     measureAfterHist (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ h
       = measureAfterHist π μ h := by
-  rw [measureAfterHist, measureAfterHist, Function.update_of_ne hh]
+  unfold measureAfterHist
+  congr 2
+  unfold Policy at π
+  exact Function.update_of_ne hh _ π
 
 omit [Nonempty A] [TopologicalSpace A] [DiscreteTopology A] [BorelSpace A]
   [TopologicalSpace O] [DiscreteTopology O] [BorelSpace O] in
@@ -255,8 +264,10 @@ lemma traj_marginal_inert (μ : Environment A O) (π : Policy A O) (h₀ : Histo
   induction n with
   | zero =>
     intro hn ω
-    rw [traj_marginal_singleton_zero, traj_marginal_singleton_zero,
-      measureAfterHist_update_of_ne μ π h₀ List.nil a (by rintro rfl; simp at hn)]
+    have e1 := traj_marginal_singleton_zero μ
+      (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) ω
+    have e2 := traj_marginal_singleton_zero μ π ω
+    rw [e1, e2, measureAfterHist_update_of_ne μ π h₀ List.nil a (by rintro rfl; simp at hn)]
   | succ k ih =>
     intro hn ω
     have hHk : (historyHelper k
@@ -267,8 +278,10 @@ lemma traj_marginal_inert (μ : Environment A O) (π : Policy A O) (h₀ : Histo
         rw [heq]
       simp only [historyHelper, List.length_ofFn] at this
       omega
-    rw [traj_marginal_singleton_succ, traj_marginal_singleton_succ,
-      ih (by omega) _, measureAfterHist_update_of_ne μ π h₀ _ a hHk]
+    have e1 := traj_marginal_singleton_succ μ
+      (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) k ω
+    have e2 := traj_marginal_singleton_succ μ π k ω
+    rw [e1, e2, ih (by omega) _, measureAfterHist_update_of_ne μ π h₀ _ a hHk]
 
 open Classical in
 omit [Nonempty A] [TopologicalSpace A] [DiscreteTopology A] [BorelSpace A]
@@ -292,7 +305,9 @@ lemma traj_marginal_barycentric (μ : Environment A O) (π : Policy A O) (h₀ :
     rw [traj_marginal_singleton_zero, measureAfterHist_barycentric μ π h₀ List.nil,
       Measure.finsetSum_apply]
     refine Finset.sum_congr rfl (fun a _ => ?_)
-    rw [Measure.smul_apply, smul_eq_mul, traj_marginal_singleton_zero]
+    have e := traj_marginal_singleton_zero μ
+      (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) ω
+    rw [Measure.smul_apply, smul_eq_mul, e]
   | succ k ih =>
     intro ω
     simp only [traj_marginal_singleton_succ]
@@ -315,14 +330,34 @@ lemma traj_marginal_barycentric (μ : Environment A O) (π : Policy A O) (h₀ :
         rw [measureAfterHist_barycentric μ π h₀ Hk, Measure.finsetSum_apply]
         exact Finset.sum_congr rfl (fun a _ => by rw [Measure.smul_apply, smul_eq_mul])
       rw [hbar, Finset.mul_sum]
-      simp_rw [hge]
+      have hsucc : ∀ a : A, (Measure.map (Preorder.frestrictLe (k + 1))
+          (trajectoryMeasure (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ)) {ω}
+            = (Measure.map (Preorder.frestrictLe k)
+                (trajectoryMeasure (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ)) {ω'}
+              * (measureAfterHist (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ Hk)
+                {z} := by
+        intro a
+        rw [hω'def, hHkdef, hzdef]
+        exact traj_marginal_singleton_succ μ
+          (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) k ω
+      simp_rw [hsucc, hge]
       exact Finset.sum_congr rfl (fun a _ => by ring)
     · -- Untouched step: the one-step measure is inert, recurse on the lower marginal.
       have hmah : ∀ a : A,
           (measureAfterHist (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ Hk) {z}
             = (measureAfterHist π μ Hk) {z} :=
         fun a => by rw [measureAfterHist_update_of_ne μ π h₀ Hk a hcase]
-      simp_rw [hmah, ← mul_assoc]
+      have hsucc : ∀ a : A, (Measure.map (Preorder.frestrictLe (k + 1))
+          (trajectoryMeasure (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ)) {ω}
+            = (Measure.map (Preorder.frestrictLe k)
+                (trajectoryMeasure (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ)) {ω'}
+              * (measureAfterHist (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ Hk)
+                {z} := by
+        intro a
+        rw [hω'def, hHkdef, hzdef]
+        exact traj_marginal_singleton_succ μ
+          (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) k ω
+      simp_rw [hsucc, hmah, ← mul_assoc]
       rw [← Finset.sum_mul, ← ih ω']
 
 open Classical in
@@ -352,7 +387,7 @@ lemma trajectoryMeasure_barycentric (μ : Environment A O) (π : Policy A O) (h�
   set ν : Measure (ℕ → A × O) := ∑ a : A, ((π h₀ {a} : ℝ≥0) : ℝ≥0∞) •
     trajectoryMeasure (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ with hν
   -- Each finite marginal of `traj π` is a probability measure, so the induced projective family is.
-  haveI hprob : ∀ n, IsProbabilityMeasure
+  have hprob : ∀ n, IsProbabilityMeasure
       ((trajectoryMeasure π μ).map (Preorder.frestrictLe n)) :=
     fun n => Measure.isProbabilityMeasure_map (Preorder.measurable_frestrictLe n).aemeasurable
   -- The marginal sequence is projective (nested restrictions agree).
@@ -394,7 +429,7 @@ lemma trajectoryMeasure_barycentric (μ : Environment A O) (π : Policy A O) (h�
         Measure.map_apply (Preorder.measurable_frestrictLe n) (measurableSet_singleton _)]
     rw [hLHS]
     exact (traj_marginal_barycentric μ π h₀ n ω).symm
-  haveI : ∀ i : Finset ℕ, IsFiniteMeasure
+  have : ∀ i : Finset ℕ, IsFiniteMeasure
       (MeasureTheory.inducedFamily
         (fun n => (trajectoryMeasure π μ).map (Preorder.frestrictLe n)) i) := by
     intro i; rw [MeasureTheory.inducedFamily]; infer_instance
@@ -487,8 +522,8 @@ lemma exists_deterministic_le (L : MomentaryLoss A O) (γ : discount)
     ∃ πd : Policy A O, IsPolicyDeterministic πd ∧
       expectedTotalLoss L γ πd μ ≤ expectedTotalLoss L γ π μ := by
   classical
-  haveI : Nonempty (History A O) := ⟨[]⟩
-  haveI : Countable (History A O) := inferInstanceAs (Countable (List (A × O)))
+  have : Nonempty (History A O) := ⟨[]⟩
+  have : Countable (History A O) := inferInstanceAs (Countable (List (A × O)))
   -- Enumerate the (countably-many) histories.
   obtain ⟨e, he⟩ := exists_surjective_nat (History A O)
   -- One greedy determinisation step: replace `p` at History `h` by a best Dirac.
@@ -543,7 +578,7 @@ lemma exists_deterministic_le (L : MomentaryLoss A O) (γ : discount)
             rw [hcontra, ← hNspec h]
             exact Finset.mem_image_of_mem e (Finset.mem_range.mpr (by omega))
           simp only [hg]
-          rw [Function.update_of_ne (Ne.symm hem)]
+          exact Function.update_of_ne (Ne.symm hem) _ (seq m)
       rw [hstep, ih]
   -- The frozen value is a Dirac, so `πd` is deterministic.
   have hdir : ∀ h, πd h = ⟨Measure.dirac
@@ -557,13 +592,18 @@ lemma exists_deterministic_le (L : MomentaryLoss A O) (γ : discount)
       rw [Finset.mem_image] at hmem
       obtain ⟨m, hmrange, hem⟩ := hmem
       exact hNmin h m (Finset.mem_range.mp hmrange) hem
-    rw [if_pos hfresh]
+    rw [ite_eq_left hfresh]
     simp only [hg]
-    rw [hNspec h, Function.update_self]
+    rw [hNspec h]
+    exact Function.update_self h _ (seq (N h))
   refine ⟨πd, ⟨fun h => Classical.choose (exists_dirac_improvement L γ μ (seq (N h)) h),
     fun h => ?_⟩, ?_⟩
   · -- `πd h` puts mass `1` on its Dirac point.
-    rw [hdir h, ← ENNReal.coe_eq_one, ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure]
+    set v : ProbabilityMeasure A := (⟨Measure.dirac
+      (Classical.choose (exists_dirac_improvement L γ μ (seq (N h)) h)),
+      inferInstance⟩ : ProbabilityMeasure A) with hv
+    rw [show πd h = v from hdir h, ← ENNReal.coe_eq_one,
+      ProbabilityMeasure.ennreal_coeFn_eq_coeFn_toMeasure]
     exact MeasureTheory.Measure.dirac_apply_of_mem (Set.mem_singleton _)
   · -- Value: continuity + pointwise convergence of the iterates.
     have hseqtend : Filter.Tendsto seq Filter.atTop (nhds πd) := by
@@ -603,12 +643,12 @@ is then automatic). -/
 theorem exists_optimal_policy (L : MomentaryLoss A O) (γ : discount) (μ : Environment A O)
     : ∃ π', IsOptimalPolicy L γ μ π'
     ∧ IsPolicyDeterministic π' := by
-  letI : TopologicalSpace A := ⊥
-  letI : TopologicalSpace O := ⊥
-  haveI : DiscreteTopology A := ⟨rfl⟩
-  haveI : DiscreteTopology O := ⟨rfl⟩
-  haveI : BorelSpace A := DiscreteMeasurableSpace.toBorelSpace
-  haveI : BorelSpace O := DiscreteMeasurableSpace.toBorelSpace
+  let : TopologicalSpace A := ⊥
+  let : TopologicalSpace O := ⊥
+  have : DiscreteTopology A := ⟨rfl⟩
+  have : DiscreteTopology O := ⟨rfl⟩
+  have : BorelSpace A := DiscreteMeasurableSpace.toBorelSpace
+  have : BorelSpace O := DiscreteMeasurableSpace.toBorelSpace
   exact optimal_deterministic_policy_exists L γ μ
 
 /- The article talks about an optimal Policy.

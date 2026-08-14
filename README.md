@@ -10,6 +10,11 @@ These follow some (cited) source material, but focus on a brief but mathematical
 description of the core definitions and theorem statements,
 while omitting proofs and intuitions.
 
+The articles are in markdown files and use tex/mathjax syntax for mathematical expressions.
+If you have `pandoc` installed,
+you can convert the markdown to html files by executing
+`./scripts/create_html.sh`.
+
 ### Topics covered so far
 
 - Quantilizers
