@@ -72,8 +72,6 @@ private lemma integrableOn_log_mul_exp_neg_Ioi :
             (c := (1 : ℝ)) htend one_ne_zero))
       (by norm_num)).1
   rw [MellinConvergent] at hconv
-  change Integrable (fun t : ℝ => Real.log t * Real.exp (-t))
-    (volume.restrict (Set.Ioi 0))
   simpa [smul_eq_mul, ← Complex.ofReal_neg, Complex.exp_ofReal_re] using hconv.re
 
 /-- The signed logarithmic moment of an `Exp(1)` variable. -/
@@ -104,8 +102,9 @@ theorem integral_log_mul_exp_neg_Ioi :
       (fun t : ℝ =>
         (t : ℂ) ^ ((1 : ℂ) - 1) * (Real.log t * Real.exp (-t)))
       (volume.restrict (Set.Ioi 0)) := by
-    convert integrableOn_log_mul_exp_neg_Ioi.ofReal using 1
-    all_goals norm_num
+    refine integrableOn_log_mul_exp_neg_Ioi.ofReal.congr
+      (Filter.Eventually.of_forall fun t => ?_)
+    simp [Complex.ofReal_mul]
   have hJreal :
       (∫ t : ℝ in Set.Ioi 0, Real.log t * Real.exp (-t)) = J.re := by
     calc
