@@ -1,7 +1,8 @@
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Connected
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Envelope
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.SeedConstant
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Race
+module
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Connected
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Envelope
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.SeedConstant
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Race
 
 /-!
 # §12. The universal cell-defect bound and the Main Theorem
@@ -37,12 +38,14 @@ T      ≤ (108C₀+3) τ                               (Cor 4.4)
 
 | Theorem | Constant | Difference |
 |---|---|---|
-| `T_le_Cstar` | `108C₀+3 < 4.83×10¹⁶` | baseline assembly |
+| `T_le_Cstar` | `108C₀+3 < 4.94×10¹⁶` (`Cstar_lt_weak`) | baseline assembly |
 | `T_le_CstarSharp` | `12C₀+3 < 5.37×10¹⁵` | uses `I(V;Z∣L₀) ≤ 2b_Z` (Lem 5.4), no co-info detour |
 | `T_le_Cstar_sharpest` | `6C₀+3 < 2.69×10¹⁵` | adds the single-replica form of Thm 11.1 |
 
 All three run on the same lemmas; only the assembly differs.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -61,10 +64,6 @@ private theorem main_Bq_nonneg {p : α × β → ℝ} (D : SeedSetup p) : 0 ≤ 
       (fun q => q.1) (fun q => q.2.1) (fun q => q.2.2))
     (condMI_nonneg D.L.joint_isPMF
       (fun q => q.1) (fun q => q.2.2) (fun q => q.2.1))
-
-private theorem main_bZ_nonneg {p : α × β → ℝ} (D : SeedSetup p) : 0 ≤ bZ D := by
-  exact condMI_nonneg (replicaLaw_isPMF D)
-    (fun u => u.1) (fun u => u.2.2.2) (fun u => u.2.1)
 
 /-- **Theorem 12.1** (universal ungated cell-defect bound,
 *gumbel-cell-defect-universal*):
@@ -105,33 +104,6 @@ theorem Dwdefect_le {p : α × β → ℝ} (D : SeedSetup p)
     _ ≤ (108 * C0 + 2) * (D.M + D.Bq) := by
       nlinarith [mul_nonneg hC0 hM, mul_nonneg hC0 hB]
 
-/-- The sharpest form of Theorem 12.1 (Remark 12.3(b)):
-`𝒟_w ≤ (6C₀ + 2) τ`, from the single-replica seed constant. -/
-theorem Dwdefect_le_sharpest {p : α × β → ℝ} (D : SeedSetup p)
-    (K : Clustering D) (R : RaceQuantities D K) :
-    Dwdefect D ≤ (6 * C0 + 2) * tau p := by
-  have hC0 : 0 ≤ C0 := C0_pos.le
-  have hM := main_M_nonneg D
-  have hR : Rcell D ≤ 3 * C0 * (D.M + bZ D) := by
-    calc
-      Rcell D ≤ 3 * R.winnerEntropy := R.rcell_le
-      _ ≤ 3 * (C0 * (D.M + bZ D)) :=
-        mul_le_mul_of_nonneg_left (seed_constant_single R) (by norm_num)
-      _ = 3 * C0 * (D.M + bZ D) := by ring
-  have hcoef : 0 ≤ 3 * C0 + 1 := by nlinarith
-  have hb : (3 * C0 + 1) * bZ D ≤ (3 * C0 + 1) * (2 * D.Bq) :=
-    mul_le_mul_of_nonneg_left (bZ_le_two_Bq D) hcoef
-  rw [D.tau_eq_M_add_Bq]
-  calc
-    Dwdefect D ≤ Rcell D + bZ D := Dwdefect_le_Rcell_add_bZ D
-    _ ≤ 3 * C0 * (D.M + bZ D) + bZ D := by
-      simpa [add_comm] using add_le_add_right hR (bZ D)
-    _ = 3 * C0 * D.M + (3 * C0 + 1) * bZ D := by ring
-    _ ≤ 3 * C0 * D.M + (6 * C0 + 2) * D.Bq := by
-      nlinarith
-    _ ≤ (6 * C0 + 2) * (D.M + D.Bq) := by
-      nlinarith [mul_nonneg hC0 hM]
-
 /-- **The connected case.** This is the single statement
 `T_le_Cstar` consumes from §§4-11. -/
 theorem T_le_Cstar_connected {p : α × β → ℝ} (hp : IsPMF p)
@@ -153,73 +125,5 @@ The constant is universal: it depends on no alphabet, no support size, no
 prior, and no number of latent values. -/
 theorem T_le_Cstar {p : α × β → ℝ} (hp : IsPMF p) : T p ≤ Cstar * tau p :=
   reduce_to_connected Cstar (fun _q hq hconn => T_le_Cstar_connected hq hconn) p hp
-
-/-- **stoch_to_det**, the qualitative corollary: `τ(p) = 0` forces
-`T(p) = 0`. -/
-theorem T_eq_zero_of_tau_eq_zero {p : α × β → ℝ} (hp : IsPMF p) (h : tau p = 0) :
-    T p = 0 :=
-  le_antisymm (by simpa [h] using T_le_Cstar hp) (T_nonneg p)
-
-/-- **stoch_to_det**, the boundedness corollary: `sup_p T/τ < ∞`. -/
-theorem ratio_bounded {p : α × β → ℝ} (hp : IsPMF p) (hτ : 0 < tau p) :
-    T p / tau p ≤ Cstar :=
-  (div_le_iff₀ hτ).2 (by simpa [mul_comm] using T_le_Cstar hp)
-
-private theorem Dwdefect_le_sharp {p : α × β → ℝ} (D : SeedSetup p)
-    (K : Clustering D) (R : RaceQuantities D K) :
-    Dwdefect D ≤ (12 * C0 + 2) * tau p := by
-  let pairI := condMI (fun u => (u.2.1, u.2.2.1)) (fun u => u.2.2.2)
-    (fun u => u.1) (replicaLaw D)
-  have hC0 : 0 ≤ C0 := C0_pos.le
-  have hM := main_M_nonneg D
-  have hRseed : Rcell D ≤ 3 * C0 * (D.M + pairI) := by
-    calc
-      Rcell D ≤ 3 * R.winnerEntropy := R.rcell_le
-      _ ≤ 3 * (C0 * (D.M + pairI)) :=
-        mul_le_mul_of_nonneg_left (seed_constant R) (by norm_num)
-      _ = 3 * C0 * (D.M + pairI) := by ring
-  have hpair : D.M + pairI ≤ D.M + 2 * bZ D := by
-    dsimp [pairI]
-    linarith [pair_le_two_bZ D]
-  have hR : Rcell D ≤ 3 * C0 * (D.M + 2 * bZ D) :=
-    hRseed.trans (mul_le_mul_of_nonneg_left hpair (mul_nonneg (by norm_num) hC0))
-  have hcoef : 0 ≤ 6 * C0 + 1 := by nlinarith
-  have hb : (6 * C0 + 1) * bZ D ≤ (6 * C0 + 1) * (2 * D.Bq) :=
-    mul_le_mul_of_nonneg_left (bZ_le_two_Bq D) hcoef
-  rw [D.tau_eq_M_add_Bq]
-  calc
-    Dwdefect D ≤ Rcell D + bZ D := Dwdefect_le_Rcell_add_bZ D
-    _ ≤ 3 * C0 * (D.M + 2 * bZ D) + bZ D := by
-      simpa [add_comm] using add_le_add_right hR (bZ D)
-    _ = 3 * C0 * D.M + (6 * C0 + 1) * bZ D := by ring
-    _ ≤ 3 * C0 * D.M + (12 * C0 + 2) * D.Bq := by
-      nlinarith
-    _ ≤ (12 * C0 + 2) * (D.M + D.Bq) := by
-      nlinarith [mul_nonneg hC0 hM]
-
-/-- **Remark 12.3(a)**:
-`T(p) ≤ (12 C₀ + 3) τ(p)`. -/
-theorem T_le_CstarSharp {p : α × β → ℝ} (hp : IsPMF p) : T p ≤ CstarSharp * tau p := by
-  apply reduce_to_connected CstarSharp _ p hp
-  intro q hq hconn
-  obtain ⟨D⟩ := exists_seedSetup hq hconn
-  obtain ⟨K⟩ := exists_clustering D
-  obtain ⟨R⟩ := exists_raceQuantities D K
-  have hT := T_le_of_Dwdefect_le D (integrable_winnerScore D) (Dwdefect_le_sharp D K R)
-  rw [CstarSharp]
-  convert hT using 1 ; ring
-
-/-- **Remark 12.3(b)**: `T(p) ≤ (6 C₀ + 3) τ(p)`, the strongest displayed
-constant. -/
-theorem T_le_Cstar_sharpest {p : α × β → ℝ} (hp : IsPMF p) :
-    T p ≤ (6 * C0 + 3) * tau p := by
-  apply reduce_to_connected (6 * C0 + 3) _ p hp
-  intro q hq hconn
-  obtain ⟨D⟩ := exists_seedSetup hq hconn
-  obtain ⟨K⟩ := exists_clustering D
-  obtain ⟨R⟩ := exists_raceQuantities D K
-  have hT := T_le_of_Dwdefect_le D (integrable_winnerScore D)
-    (Dwdefect_le_sharpest D K R)
-  convert hT using 1 ; ring
 
 end stoch_to_det

@@ -1,11 +1,14 @@
+module
 
-import Mathlib.MeasureTheory.MeasurableSpace.Defs
-import AISafetyMath.Solutions.NL_Conjecture.Setup
+public import Mathlib.MeasureTheory.MeasurableSpace.Defs
+public import AISafetyMath.Solutions.NL_Conjecture.Setup
 
-/-
+/-!
 Stochastic/deterministic natural-latent predicates and the exact-case theorem
 `conjecture_exact_case`, built on top of `Setup.lean`.
 -/
+
+@[expose] public section
 
 namespace NaturalLatents
 

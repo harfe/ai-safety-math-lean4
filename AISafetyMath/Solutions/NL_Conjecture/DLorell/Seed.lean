@@ -1,8 +1,9 @@
-import Mathlib.Probability.Distributions.Exponential
-import Mathlib.MeasureTheory.Constructions.Pi
-import Mathlib.InformationTheory.KullbackLeibler.Basic
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Duality
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Toolkit
+module
+public import Mathlib.Probability.Distributions.Exponential
+public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.InformationTheory.KullbackLeibler.Basic
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Duality
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Toolkit
 
 /-!
 # §4-§5. The calibrated shared-Gumbel race, and posterior replicas
@@ -47,6 +48,8 @@ a KL between measures on `ι → ℝ`, always well defined; `condMIcts` below ta
 this as its definition, over Mathlib's `InformationTheory.klDiv` (`ℝ≥0∞`, nats).
 No general theory of mutual information is involved.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -191,11 +194,11 @@ noncomputable def cellLaw (ε : D.L.ι → ℝ) (a : D.L.ι) (z : α × β) : �
   if cellMass D ε a = 0 then p z
   else if winner D ε z = a then p z / cellMass D ε a else 0
 
-private lemma cellMass_nonneg (ε : D.L.ι → ℝ) (a : D.L.ι) :
+lemma cellMass_nonneg (ε : D.L.ι → ℝ) (a : D.L.ι) :
     0 ≤ cellMass D ε a := by
   exact Finset.sum_nonneg fun z _ => D.isPMF.nonneg z
 
-private lemma sum_cellMass (ε : D.L.ι → ℝ) :
+lemma sum_cellMass (ε : D.L.ι → ℝ) :
     ∑ a, cellMass D ε a = 1 := by
   unfold cellMass cell
   calc
@@ -309,16 +312,6 @@ theorem per_seed_ledger (ε : D.L.ι → ℝ) :
       rw [hfusion, ← hscore, hbase]
     _ = V.score - tau p := by ring
 
-/-- Each per-seed ledger term is nonnegative (Theorem 2.3). -/
-theorem per_seed_ledger_nonneg (ε : D.L.ι → ℝ) :
-    0 ≤ ∑ a, cellMass D ε a * Gdef (support p) D.w (cellLaw D ε a) := by
-  apply Finset.sum_nonneg
-  intro a _
-  apply mul_nonneg (cellMass_nonneg D ε a)
-  apply Gdef_nonneg D.feasible
-  · exact (winnerLatent D ε).comp_isPMF a
-  · exact cellLaw_supported D ε a
-
 end FixedSeed
 
 /-! ### The seed law -/
@@ -341,9 +334,8 @@ noncomputable def seedLaw (ι : Type) [Fintype ι] : Measure (ι → ℝ) :=
 
 instance (ι : Type) [Fintype ι] : IsProbabilityMeasure (seedLaw ι) := by
   unfold seedLaw
-  apply Measure.isProbabilityMeasure_map
-  exact (measurable_pi_lambda _ fun i =>
-    (Real.measurable_log.comp (measurable_pi_apply i)).neg).aemeasurable
+  exact (Measure.isProbabilityMeasure_map_iff (Measurable.of_eval fun i =>
+    (Real.measurable_log.comp (measurable_pi_apply i)).neg).aemeasurable).2 inferInstance
 
 /- The one-coordinate seed law is atomless.  The only junk-value issue is at
 nonpositive clocks: `-log E = 0` there, but `Exp(1)` assigns that half-line
@@ -355,8 +347,8 @@ instance : IsProbabilityMeasure gumbel1 := by
   let : IsProbabilityMeasure (expMeasure 1) :=
     isProbabilityMeasure_expMeasure zero_lt_one
   unfold gumbel1
-  apply Measure.isProbabilityMeasure_map
-  exact Real.measurable_log.neg.aemeasurable
+  exact (Measure.isProbabilityMeasure_map_iff
+    Real.measurable_log.neg.aemeasurable).2 inferInstance
 
 lemma expMeasure_one_Iic_zero : expMeasure 1 (Set.Iic 0) = 0 := by
   let := isProbabilityMeasure_expMeasure (r := (1 : ℝ)) zero_lt_one
@@ -588,8 +580,8 @@ lemma seedLaw_eq_pi_gumbel1 (ι : Type) [Fintype ι] :
     isProbabilityMeasure_expMeasure zero_lt_one
   let : IsProbabilityMeasure
       ((expMeasure 1).map fun E : ℝ => -Real.log E) := by
-    apply Measure.isProbabilityMeasure_map
-    exact Real.measurable_log.neg.aemeasurable
+    exact (Measure.isProbabilityMeasure_map_iff
+      Real.measurable_log.neg.aemeasurable).2 inferInstance
   let : ∀ _ : ι, SigmaFinite
       ((expMeasure 1).map fun E : ℝ => -Real.log E) := fun _ => inferInstance
   unfold seedLaw clockLaw gumbel1
@@ -853,7 +845,7 @@ theorem integrable_winnerScore :
     change Measurable (fun ε : D.L.ι → ℝ => Real.log (D.post a z) + ε a)
     exact measurable_const.add (measurable_pi_apply a)
   have hlexCode : Measurable (fun ε => lexWinner D ε) :=
-    measurable_pi_lambda _ hlex
+    Measurable.of_eval hlex
   have hcoded : Measurable (codedScore D) := measurable_of_finite _
   have hversion : Measurable (fun ε => codedScore D (lexWinner D ε)) :=
     hcoded.comp hlexCode
@@ -889,10 +881,6 @@ theorem expected_score_eq (hint : Integrable (fun ε => (winnerLatent D ε).scor
   unfold Dwdefect
   rw [hledger, integral_sub hint (integrable_const (tau p))]
   simp only [integral_const, probReal_univ, smul_eq_mul, one_mul, add_sub_cancel]
-
-theorem Dwdefect_nonneg : 0 ≤ Dwdefect D := by
-  unfold Dwdefect
-  exact integral_nonneg fun ε => per_seed_ledger_nonneg D ε
 
 /-- The averaging step of Corollary 4.4: some fixed seed does at least as well
 as the average. This is where §12 uses the seed measure. -/
@@ -2002,118 +1990,6 @@ private lemma replica_condMI_l₂_eq_l₁ :
 noncomputable def bZ : ℝ :=
   condMI (fun u => u.1) (fun u => u.2.2.2) (fun u => u.2.1) (replicaLaw D)
 
-/-- `j := I(L;Z)`. -/
-noncomputable def jInfo : ℝ := MI (fun q => q.1) (fun q => q.2) D.L.joint
-
-/-- **Lemma 5.2** (one-use posterior resampling).
-Every contact satisfies `D(r‖q) ≥ ⅔D(r_X‖q_X) + ⅔D(r_Y‖q_Y)`.
-*Finite.* One application of (T1) plus `contact_hypercontractive`. -/
-theorem posterior_resampling {S : Finset (α × β)} {w : α × β → ℝ} (hw : Feasible S w)
-    {q : α × β → ℝ} (hq : IsContact S w q) {r : α × β → ℝ} (hr : IsPMF r)
-    (hac : AbsCont r q) :
-    2 / 3 * KL (mX r) (mX q) + 2 / 3 * KL (mY r) (mY q) ≤ KL r q := by
-  have hrS : Supported S r := by
-    intro z hzS
-    exact hac z (hq.2.1 z hzS)
-  have hsum_support (k : α × β → ℝ) :
-      (∑ z ∈ S, r z * k z) = ∑ z, r z * k z := by
-    apply Finset.sum_subset (Finset.subset_univ S)
-    intro z _ hzS
-    rw [hrS z hzS, zero_mul]
-  have hKL : (∑ z ∈ S, r z * lg (r z / q z)) = KL r q := by
-    rw [hsum_support]
-    rfl
-  have hKLX :
-      (∑ z ∈ S, r z * lg (mX r z.1 / mX q z.1)) = KL (mX r) (mX q) := by
-    calc
-      (∑ z ∈ S, r z * lg (mX r z.1 / mX q z.1)) =
-          ∑ z, r z * lg (mX r z.1 / mX q z.1) := hsum_support _
-      _ = ∑ x, mX r x * lg (mX r x / mX q x) :=
-        (sum_push_mul Prod.fst r (fun x => lg (mX r x / mX q x))).symm
-      _ = KL (mX r) (mX q) := rfl
-  have hKLY :
-      (∑ z ∈ S, r z * lg (mY r z.2 / mY q z.2)) = KL (mY r) (mY q) := by
-    calc
-      (∑ z ∈ S, r z * lg (mY r z.2 / mY q z.2)) =
-          ∑ z, r z * lg (mY r z.2 / mY q z.2) := hsum_support _
-      _ = ∑ y, mY r y * lg (mY r y / mY q y) :=
-        (sum_push_mul Prod.snd r (fun y => lg (mY r y / mY q y))).symm
-      _ = KL (mY r) (mY q) := rfl
-  have hterm (z : α × β) (hzS : z ∈ S) :
-      r z * lg (r z / refMeas S w r z) =
-        r z * lg (r z / q z)
-          - ((2 : ℝ) / 3) * (r z * lg (mX r z.1 / mX q z.1))
-          - ((2 : ℝ) / 3) * (r z * lg (mY r z.2 / mY q z.2)) := by
-    by_cases hrz : r z = 0
-    · simp [hrz]
-    · have hrz_pos : 0 < r z := lt_of_le_of_ne (hr.nonneg z) (Ne.symm hrz)
-      have hqz : q z ≠ 0 := fun hqz => hrz (hac z hqz)
-      have hqz_pos : 0 < q z := lt_of_le_of_ne (hq.1.nonneg z) (Ne.symm hqz)
-      have hrX_le : r z ≤ mX r z.1 := by
-        unfold mX push
-        exact Finset.single_le_sum (fun z _ => hr.nonneg z) (by simp only [mem_filter, mem_univ,
-            and_self])
-      have hrY_le : r z ≤ mY r z.2 := by
-        unfold mY push
-        exact Finset.single_le_sum (fun z _ => hr.nonneg z) (by simp only [mem_filter, mem_univ,
-            and_self])
-      have hqX_le : q z ≤ mX q z.1 := by
-        unfold mX push
-        exact Finset.single_le_sum (fun z _ => hq.1.nonneg z) (by simp only [mem_filter, mem_univ,
-            and_self])
-      have hqY_le : q z ≤ mY q z.2 := by
-        unfold mY push
-        exact Finset.single_le_sum (fun z _ => hq.1.nonneg z) (by simp only [mem_filter, mem_univ,
-            and_self])
-      have hrX_pos : 0 < mX r z.1 := hrz_pos.trans_le hrX_le
-      have hrY_pos : 0 < mY r z.2 := hrz_pos.trans_le hrY_le
-      have hqX_pos : 0 < mX q z.1 := hqz_pos.trans_le hqX_le
-      have hqY_pos : 0 < mY q z.2 := hqz_pos.trans_le hqY_le
-      have hw0 : w z ≠ 0 := (hw.1 z hzS).ne'
-      have hrXpow0 : mX r z.1 ^ ((2 : ℝ) / 3) ≠ 0 :=
-        (Real.rpow_pos_of_pos hrX_pos _).ne'
-      have hrYpow0 : mY r z.2 ^ ((2 : ℝ) / 3) ≠ 0 :=
-        (Real.rpow_pos_of_pos hrY_pos _).ne'
-      have hqXpow0 : mX q z.1 ^ ((2 : ℝ) / 3) ≠ 0 :=
-        (Real.rpow_pos_of_pos hqX_pos _).ne'
-      have hqYpow0 : mY q z.2 ^ ((2 : ℝ) / 3) ≠ 0 :=
-        (Real.rpow_pos_of_pos hqY_pos _).ne'
-      have hrefR :
-          w z * mX r z.1 ^ ((2 : ℝ) / 3) * mY r z.2 ^ ((2 : ℝ) / 3) ≠ 0 :=
-        mul_ne_zero (mul_ne_zero hw0 hrXpow0) hrYpow0
-      have hrefQ :
-          w z * mX q z.1 ^ ((2 : ℝ) / 3) * mY q z.2 ^ ((2 : ℝ) / 3) ≠ 0 :=
-        mul_ne_zero (mul_ne_zero hw0 hqXpow0) hqYpow0
-      rw [refMeas, ite_eq_left hzS, hq.2.2 z hzS]
-      simp only [lg_eq_log_div]
-      rw [Real.log_div hrz hrefR, Real.log_div hrz hrefQ,
-        Real.log_div hrX_pos.ne' hqX_pos.ne', Real.log_div hrY_pos.ne' hqY_pos.ne',
-        Real.log_mul (mul_ne_zero hw0 hrXpow0) hrYpow0,
-        Real.log_mul hw0 hrXpow0, Real.log_rpow hrX_pos, Real.log_rpow hrY_pos,
-        Real.log_mul (mul_ne_zero hw0 hqXpow0) hqYpow0,
-        Real.log_mul hw0 hqXpow0, Real.log_rpow hqX_pos, Real.log_rpow hqY_pos]
-      field_simp [Real.log_ne_zero_of_pos_of_ne_one (by norm_num : (0 : ℝ) < 2)
-        (by norm_num : (2 : ℝ) ≠ 1)] ; ring
-  have hsum :
-      (∑ z ∈ S, r z * lg (r z / refMeas S w r z)) =
-        (∑ z ∈ S, r z * lg (r z / q z))
-          - ((2 : ℝ) / 3) * (∑ z ∈ S, r z * lg (mX r z.1 / mX q z.1))
-          - ((2 : ℝ) / 3) * (∑ z ∈ S, r z * lg (mY r z.2 / mY q z.2)) := by
-    calc
-      (∑ z ∈ S, r z * lg (r z / refMeas S w r z)) =
-          ∑ z ∈ S, (r z * lg (r z / q z)
-            - ((2 : ℝ) / 3) * (r z * lg (mX r z.1 / mX q z.1))
-            - ((2 : ℝ) / 3) * (r z * lg (mY r z.2 / mY q z.2))) := by
-              apply Finset.sum_congr rfl
-              intro z hzS
-              exact hterm z hzS
-      _ = _ := by
-        rw [Finset.sum_sub_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum,
-          ← Finset.mul_sum]
-  have hg := Gdef_nonneg hw hr hrS
-  rw [Gdef, hsum, hKL, hKLX, hKLY] at hg
-  linarith
-
 /-- **Lemma 5.3** (the resampling budget): `b_Z ≤ 2B`.
 *Finite.* §12 turns every `b_Z` into `2B` and hence into `τ`. -/
 theorem bZ_le_two_Bq : bZ D ≤ 2 * D.Bq := by
@@ -2402,13 +2278,6 @@ private lemma pairResampleComp_isPMF (l₀ : D.L.ι) (v : D.L.ι × D.L.ι) :
               simp only [div_eq_mul_inv, ← Finset.sum_mul]
               rfl
         _ = 1 := div_self hprior
-
-private lemma pairResampleComp_supported (l₀ : D.L.ι) (v : D.L.ι × D.L.ι) :
-    Supported (support p) (pairResampleComp D l₀ v) := by
-  have hcontact := D.contact l₀ (D.prior_pos l₀).ne'
-  intro z hz
-  have hz0 : D.L.comp l₀ z = 0 := hcontact.2.1 z hz
-  simp [pairResampleComp, hz0]
 
 private noncomputable def pairResampleLatent (l₀ : D.L.ι) : Latent (D.L.comp l₀) where
   ι := D.L.ι × D.L.ι
@@ -2839,7 +2708,7 @@ lemma seedLaw_lexWinner_measure (z : α × β) (hz : 0 < p z)
   let : IsProbabilityMeasure (expMeasure 1) :=
     isProbabilityMeasure_expMeasure zero_lt_one
   let F : (D.L.ι → ℝ) → (D.L.ι → ℝ) := fun E i => -Real.log (E i)
-  have hF : Measurable F := measurable_pi_lambda _ fun i =>
+  have hF : Measurable F := Measurable.of_eval fun i =>
     (Real.measurable_log.comp (measurable_pi_apply i)).neg
   have hlex : Measurable (fun ε => lexWinner D ε z) := by
     unfold lexWinner
@@ -2921,7 +2790,7 @@ lemma integrable_winner_code
     change Measurable (fun ε : D.L.ι → ℝ => Real.log (D.post a z) + ε a)
     exact measurable_const.add (measurable_pi_apply a)
   have hlexCode : Measurable (fun ε => lexWinner D ε) :=
-    measurable_pi_lambda _ hlex
+    Measurable.of_eval hlex
   have hversion : Measurable (fun ε => F (lexWinner D ε)) :=
     (measurable_of_finite F).comp hlexCode
   have hae :

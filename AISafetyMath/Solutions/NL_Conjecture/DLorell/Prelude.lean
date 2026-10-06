@@ -1,5 +1,6 @@
-import Mathlib.Analysis.SpecialFunctions.Log.Base
-import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
+module
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
+public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 
 /-!
 # Prelude: conventions for the stoch_to_det formalization
@@ -24,6 +25,8 @@ The same junk values make a statement vacuously true for malformed inputs, so
 the hypotheses `IsFinMeas` / `IsPMF` are carried explicitly throughout.
 -/
 
+@[expose] public section
+
 namespace stoch_to_det
 
 open scoped BigOperators
@@ -31,8 +34,6 @@ open scoped BigOperators
 /-- Base-2 logarithm. All information quantities in this development are in
 **bits** unless the name says `_nats`. -/
 noncomputable abbrev lg (x : ℝ) : ℝ := Real.logb 2 x
-
-@[simp] lemma lg_zero : lg 0 = 0 := by simp [lg]
 
 @[simp] lemma lg_one : lg 1 = 0 := by simp [lg]
 

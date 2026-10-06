@@ -1,6 +1,7 @@
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Seed
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Constants
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Constants1771
+module
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Seed
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Constants
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Constants1771
 
 /-!
 # §7. The duplicate quotient, the exact race law, and the seed interface
@@ -43,6 +44,8 @@ channel bounds plus the cell-residual link as obligations. Constructing an
 instance (`stoch_to_det/Race.lean`, `exists_raceQuantities`) is Lemmas 7.2-7.5 +
 Theorems 8.1 and 10.1, and is the only place the seed measure theory lives.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -987,10 +990,6 @@ theorem dMis_eq : K.dMis = ∑ z, p z * (1 - ∑ c, K.sigma c z ^ 2) := by
   · simp [hz]
   · rw [posterior_mismatch_eq K z hz]
 
-theorem dMis_nonneg : 0 ≤ K.dMis := by
-  unfold dMis
-  exact Finset.sum_nonneg fun u _ => (replicaLaw_isPMF D).nonneg u
-
 /-! ### Lemma 7.4 — the exact race law
 
 At fixed `Z = z` the cluster clocks `T_c := X*_c/σ_c(z)` are
@@ -1047,13 +1046,5 @@ structure RaceQuantities {p : α × β → ℝ} (D : SeedSetup p) (K : Clusterin
   residual is at most three times the winner entropy. Proved by the race
   construction. -/
   rcell_le : Rcell D ≤ 3 * winnerEntropy
-
-/-- The race interface extended by the sharpened scalar-channel estimate.
-Keeping this as an extension preserves the audited
-historical theorem unchanged. -/
-structure RaceQuantities1771 {p : α × β → ℝ}
-    (D : SeedSetup p) (K : Clustering D) extends RaceQuantities D K where
-  scalar_le_1771 : toRaceQuantities.scalar ≤
-    K.Sinfo + kappa1771 * K.dMis
 
 end stoch_to_det

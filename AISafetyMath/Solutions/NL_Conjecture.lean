@@ -1,10 +1,12 @@
+module
 
-import AISafetyMath.Solutions.NL_Conjecture.Setup
-import AISafetyMath.Solutions.NL_Conjecture.Latents
-import AISafetyMath.Solutions.NL_Conjecture.Conjecture
-import AISafetyMath.Solutions.NL_Conjecture.Bridge
+public import AISafetyMath.Solutions.NL_Conjecture.Setup
+public import AISafetyMath.Solutions.NL_Conjecture.Latents
+public import AISafetyMath.Solutions.NL_Conjecture.Conjecture
+public import AISafetyMath.Solutions.NL_Conjecture.Bridge
 
-/-
+
+/-!
 This file solves `AISafetyMath/Targets/NL_Conjecture.lean`.
 
 The main definition is `MainConjecture`.
@@ -21,3 +23,4 @@ The development is split across `AISafetyMath/Solutions/NL_Conjecture/`:
 This file just re-exports all of the above under `AISafetyMath.Solutions.NL_Conjecture`.
 -/
 
+@[expose] public section

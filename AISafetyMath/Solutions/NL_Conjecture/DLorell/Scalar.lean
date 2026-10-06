@@ -1,5 +1,6 @@
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Mismatch
-import Mathlib.NumberTheory.Harmonic.GammaDeriv
+module
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Mismatch
+public import Mathlib.NumberTheory.Harmonic.GammaDeriv
 
 /-!
 # §8. The scalar channel theorem
@@ -37,6 +38,8 @@ case. The off-diagonal case additionally needs `h(N) = γ + 1` for `N = ln T`,
 `T ~ Exp(1)` — obtained from the derivative of the Gamma integral at one — and
 `stoch_to_det.Toolkit.diffEntropy_le_of_abs_le`.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -121,187 +124,12 @@ theorem integral_log_mul_exp_neg_Ioi :
       _ = J.re := by rfl
   exact hJreal.trans hJvalue
 
-private lemma integrableOn_exp_neg_div_Ioi_one :
-    IntegrableOn (fun t : ℝ => Real.exp (-t) / t) (Set.Ioi 1) := by
-  have hmeas : AEStronglyMeasurable
-      (fun t : ℝ => Real.exp (-t) / t)
-      (volume.restrict (Set.Ioi 1)) := by
-    have hcont : ContinuousOn (fun t : ℝ => Real.exp (-t) / t) (Set.Ioi 1) :=
-      (Real.continuous_exp.comp continuous_neg).continuousOn.div
-        continuous_id.continuousOn
-        (fun t ht => (zero_lt_one.trans ht).ne')
-    exact hcont.aestronglyMeasurable measurableSet_Ioi
-  refine (integrableOn_exp_neg_Ioi 1).mono' hmeas ?_
-  rw [ae_restrict_iff' measurableSet_Ioi]
-  refine ae_of_all _ fun t ht => ?_
-  change (1 : ℝ) < t at ht
-  have htpos : 0 < t := lt_trans zero_lt_one ht
-  have htone : (1 : ℝ) ≤ t := ht.le
-  change |Real.exp (-t) / t| ≤ Real.exp (-t)
-  rw [abs_of_pos (div_pos (Real.exp_pos _) htpos)]
-  apply (div_le_iff₀ htpos).2
-  nlinarith only [Real.exp_pos (-t), htone]
-
-/-- Integration by parts identifies the positive-log tail with the
-exponential integral `E₁(1)`. -/
-theorem high_log_exp_moment_eq_E1one :
-    (∫ t : ℝ in Set.Ioi (1 : ℝ),
-      Real.log t * Real.exp (-t)) = E1one := by
-  have hlogInt : IntegrableOn
-      (fun t : ℝ => Real.log t * Real.exp (-t)) (Set.Ioi 1) :=
-    integrableOn_log_mul_exp_neg_Ioi.mono_set (by
-      intro t ht
-      change (1 : ℝ) < t at ht
-      exact lt_trans zero_lt_one ht)
-  have hleft : IntegrableOn
-      (fun t : ℝ => t⁻¹ * (-Real.exp (-t))) (Set.Ioi 1) := by
-    refine integrableOn_exp_neg_div_Ioi_one.neg.congr
-      (ae_of_all _ fun t => ?_)
-    simp [div_eq_mul_inv, mul_comm]
-  have hu (t : ℝ) (ht : t ∈ Set.Ioi (1 : ℝ)) :
-      HasDerivAt Real.log t⁻¹ t := by
-    change (1 : ℝ) < t at ht
-    exact Real.hasDerivAt_log (ne_of_gt (lt_trans zero_lt_one ht))
-  have hv (t : ℝ) (_ht : t ∈ Set.Ioi (1 : ℝ)) :
-      HasDerivAt (fun x : ℝ => -Real.exp (-x)) (Real.exp (-t)) t := by
-    have hraw := (hasDerivAt_id t).neg.exp.neg
-    refine (hraw.congr_of_eventuallyEq ?_).congr_deriv ?_
-    · filter_upwards with x
-      rfl
-    · simp only [Pi.neg_apply, id_eq, mul_neg, mul_one, neg_neg]
-  have hzero : Filter.Tendsto
-      (fun t : ℝ => Real.log t * (-Real.exp (-t)))
-      (nhdsWithin 1 (Set.Ioi 1)) (nhds 0) := by
-    have hcont : ContinuousAt
-        (fun t : ℝ => Real.log t * (-Real.exp (-t))) 1 :=
-      (Real.continuousAt_log one_ne_zero).mul
-        ((Real.continuous_exp.comp continuous_neg).neg.continuousAt)
-    change Filter.Tendsto _ (nhds 1 ⊓ Filter.principal (Set.Ioi 1)) (nhds 0)
-    simpa using hcont.tendsto.mono_left inf_le_left
-  have hpoly : Filter.Tendsto
-      (fun t : ℝ => -t * Real.exp (-t)) Filter.atTop (nhds 0) := by
-    simpa [pow_one] using
-      (Real.tendsto_pow_mul_exp_neg_atTop_nhds_zero 1).neg
-  have htop : Filter.Tendsto
-      (fun t : ℝ => Real.log t * (-Real.exp (-t)))
-      Filter.atTop (nhds 0) := by
-    refine hpoly.squeeze' tendsto_const_nhds ?_ ?_
-    · filter_upwards [Filter.eventually_ge_atTop (2 : ℝ)] with t ht
-      have htpos : 0 < t := by linarith
-      have hlogle : Real.log t ≤ t :=
-        (Real.log_le_sub_one_of_pos htpos).trans (by linarith)
-      nlinarith only [Real.exp_pos (-t), hlogle]
-    · filter_upwards [Filter.eventually_ge_atTop (2 : ℝ)] with t ht
-      have hlog0 : 0 ≤ Real.log t := Real.log_nonneg (by linarith)
-      nlinarith only [Real.exp_pos (-t), hlog0]
-  have hibp := integral_Ioi_mul_deriv_eq_deriv_mul
-    (a := (1 : ℝ))
-    (u := Real.log) (u' := fun t : ℝ => t⁻¹)
-    (v := fun t : ℝ => -Real.exp (-t))
-    (v' := fun t : ℝ => Real.exp (-t))
-    hu hv hlogInt hleft hzero htop
-  unfold E1one
-  calc
-    (∫ t : ℝ in Set.Ioi (1 : ℝ),
-        Real.log t * Real.exp (-t)) =
-        0 - 0 - ∫ t : ℝ in Set.Ioi (1 : ℝ),
-          t⁻¹ * (-Real.exp (-t)) := by
-      simpa only [Pi.mul_apply] using hibp
-    _ = ∫ t : ℝ in Set.Ioi (1 : ℝ), Real.exp (-t) / t := by
-      simp only [sub_self, zero_sub]
-      rw [← integral_neg]
-      apply setIntegral_congr_fun measurableSet_Ioi
-      intro t _
-      simp [div_eq_mul_inv, mul_comm]
-
 theorem integrableOn_abs_log_mul_exp_neg_Ioi_1771 :
     IntegrableOn (fun t : ℝ => |Real.log t| * Real.exp (-t)) (Set.Ioi 0) := by
   have hnorm := integrableOn_log_mul_exp_neg_Ioi.norm
   refine hnorm.congr (ae_of_all _ fun t => ?_)
   change |Real.log t * Real.exp (-t)| = |Real.log t| * Real.exp (-t)
   rw [abs_mul, abs_of_nonneg (Real.exp_nonneg _)]
-
-/-- The exact absolute logarithmic moment of an `Exp(1)` variable, in the
-classical `γ + 2 E₁(1)` form. -/
-theorem logExpAbsMoment_eq_euler_add_two_E1one :
-    logExpAbsMoment =
-      Real.eulerMascheroniConstant + 2 * E1one := by
-  let fa : ℝ → ℝ := fun t => |Real.log t| * Real.exp (-t)
-  let fs : ℝ → ℝ := fun t => Real.log t * Real.exp (-t)
-  have hfa : IntegrableOn fa (Set.Ioi 0) := by
-    simpa [fa] using integrableOn_abs_log_mul_exp_neg_Ioi_1771
-  have hfs : IntegrableOn fs (Set.Ioi 0) := by
-    simpa [fs] using integrableOn_log_mul_exp_neg_Ioi
-  have hfaLow : IntegrableOn fa (Set.Ioc 0 1) :=
-    hfa.mono_set (by intro t ht; exact ht.1)
-  have hfaHigh : IntegrableOn fa (Set.Ioi 1) :=
-    hfa.mono_set (by
-      intro t ht
-      change (1 : ℝ) < t at ht
-      exact lt_trans zero_lt_one ht)
-  have hfsLow : IntegrableOn fs (Set.Ioc 0 1) :=
-    hfs.mono_set (by intro t ht; exact ht.1)
-  have hfsHigh : IntegrableOn fs (Set.Ioi 1) :=
-    hfs.mono_set (by
-      intro t ht
-      change (1 : ℝ) < t at ht
-      exact lt_trans zero_lt_one ht)
-  have habsSplit : logExpAbsMoment =
-      (∫ t : ℝ in Set.Ioc 0 1, fa t) +
-        ∫ t : ℝ in Set.Ioi 1, fa t := by
-    unfold logExpAbsMoment
-    change (∫ t : ℝ in Set.Ioi 0, fa t) = _
-    rw [← Set.Ioc_union_Ioi_eq_Ioi zero_le_one,
-      setIntegral_union Set.Ioc_disjoint_Ioi_same measurableSet_Ioi
-        hfaLow hfaHigh]
-  have hsignedSplit : -Real.eulerMascheroniConstant =
-      (∫ t : ℝ in Set.Ioc 0 1, fs t) +
-        ∫ t : ℝ in Set.Ioi 1, fs t := by
-    rw [← integral_log_mul_exp_neg_Ioi]
-    change (∫ t : ℝ in Set.Ioi 0, fs t) = _
-    rw [← Set.Ioc_union_Ioi_eq_Ioi zero_le_one,
-      setIntegral_union Set.Ioc_disjoint_Ioi_same measurableSet_Ioi
-        hfsLow hfsHigh]
-  have habsLow : (∫ t : ℝ in Set.Ioc 0 1, fa t) =
-      -(∫ t : ℝ in Set.Ioc 0 1, fs t) := by
-    calc
-      (∫ t : ℝ in Set.Ioc 0 1, fa t) =
-          ∫ t : ℝ in Set.Ioc 0 1, -fs t := by
-        apply setIntegral_congr_fun measurableSet_Ioc
-        intro t ht
-        have hlog : Real.log t ≤ 0 := Real.log_nonpos ht.1.le ht.2
-        dsimp [fa, fs]
-        rw [abs_of_nonpos hlog]
-        ring
-      _ = -(∫ t : ℝ in Set.Ioc 0 1, fs t) := by
-        rw [integral_neg]
-  have habsHigh : (∫ t : ℝ in Set.Ioi 1, fa t) = E1one := by
-    calc
-      (∫ t : ℝ in Set.Ioi 1, fa t) =
-          ∫ t : ℝ in Set.Ioi 1, fs t := by
-        apply setIntegral_congr_fun measurableSet_Ioi
-        intro t ht
-        have hlog : 0 ≤ Real.log t := Real.log_nonneg ht.le
-        dsimp [fa, fs]
-        rw [abs_of_nonneg hlog]
-      _ = E1one := by
-        simpa [fs] using high_log_exp_moment_eq_E1one
-  have hsignedHigh : (∫ t : ℝ in Set.Ioi 1, fs t) = E1one := by
-    simpa [fs] using high_log_exp_moment_eq_E1one
-  rw [habsLow, habsHigh] at habsSplit
-  rw [hsignedHigh] at hsignedSplit
-  linarith
-
-/-- The scalar moment constant in the explicit
-`2/e + γ + 2 E₁(1)` presentation. -/
-theorem alpha1771_eq_E1_formula :
-    alpha1771 =
-      2 / Real.exp 1
-        + Real.eulerMascheroniConstant
-        + 2 * E1one := by
-  unfold alpha1771
-  rw [logExpAbsMoment_eq_euler_add_two_E1one]
-  ring
 
 theorem logExpAbsMoment_ge_eulerMascheroni :
     Real.eulerMascheroniConstant ≤ logExpAbsMoment := by
@@ -502,27 +330,6 @@ theorem abs_log_exp_integral_le :
   rw [← Set.Ioc_union_Ioi_eq_Ioi zero_le_one,
     setIntegral_union Set.Ioc_disjoint_Ioi_same measurableSet_Ioi hf_low hf_high]
   have hexp_one : Real.exp (-1) ≤ 1 := Real.exp_le_one_iff.mpr (by norm_num)
-  linarith
-
-/-- The off-diagonal single-context bound, in nats:
-`I(U;Z ∣ b,g) ≤ C + ln 8 − γ`, where `C = D(ν ‖ q_g)`.
-The last step is `ln((C+4)/4) ≤ C`, i.e. `e^C ≥ 1 + C/4` for `C ≥ 0`. -/
-theorem offdiag_context_bound_nats {C : ℝ} (hC : 0 ≤ C) :
-    Real.log (2 * Real.exp 1 * (C + 4)) - (1 + Real.eulerMascheroniConstant)
-      ≤ C + cZero := by
-  have hxpos : 0 < (C + 4) / 4 := div_pos (by linarith) (by norm_num)
-  have hxexp : (C + 4) / 4 ≤ Real.exp C := by
-    calc
-      (C + 4) / 4 ≤ C + 1 := by linarith
-      _ ≤ Real.exp C := by simpa [add_comm] using Real.add_one_le_exp C
-  have hlogx : Real.log ((C + 4) / 4) ≤ C :=
-    (Real.log_le_iff_le_exp hxpos).2 hxexp
-  have hfactor :
-      2 * Real.exp 1 * (C + 4) =
-        (Real.exp 1 * 8) * ((C + 4) / 4) := by ring
-  rw [hfactor, Real.log_mul (mul_ne_zero (Real.exp_ne_zero _) (by norm_num)) hxpos.ne',
-    Real.log_mul (Real.exp_ne_zero _) (by norm_num), Real.log_exp]
-  unfold cZero
   linarith
 
 /-- The sharpened off-diagonal arithmetic bound. The exact absolute

@@ -1,7 +1,8 @@
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Functionals
-import Mathlib.Analysis.Convex.Caratheodory
-import Mathlib.Analysis.Convex.StdSimplex
-import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
+module
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Functionals
+public import Mathlib.Analysis.Convex.Caratheodory
+public import Mathlib.Analysis.Convex.StdSimplex
+public import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
 
 /-!
 # §1. The two functionals as envelopes
@@ -22,6 +23,8 @@ compactness argument; the relevant Mathlib entries are `convexHull_eq_union`,
 `IsCompact.exists_isMaxOn`, and — for concavity of the entropy —
 `Real.strictConcaveOn_negMulLog` via `stoch_to_det.Entropy.H_eq_negMulLog`.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -344,14 +347,14 @@ theorem tau_eq_Psi_sub_envelope (hp : IsPMF p) :
     rw [hscore V]
     linarith
 
-private noncomputable def conditionedComp {γ : Type} [Fintype γ] [DecidableEq γ]
+noncomputable def conditionedComp {γ : Type} [Fintype γ] [DecidableEq γ]
     (f : α × β → γ) (c : γ) : α × β → ℝ :=
   fun z =>
     if push f p c = 0 then p z
     else if f z = c then (push f p c)⁻¹ * p z else 0
 
 omit [DecidableEq α] [DecidableEq β] in
-private lemma conditionedComp_isPMF {γ : Type} [Fintype γ] [DecidableEq γ]
+lemma conditionedComp_isPMF {γ : Type} [Fintype γ] [DecidableEq γ]
     (hp : IsPMF p) (f : α × β → γ) (c : γ) :
     IsPMF (conditionedComp (p := p) f c) := by
   classical
@@ -401,7 +404,7 @@ private lemma push_mul_conditionedComp {γ : Type} [Fintype γ] [DecidableEq γ]
     · simp [conditionedComp, hfc, hc]
     · simp [conditionedComp, hfc, hc]
 
-private noncomputable def functionLatent {γ : Type} [Fintype γ] [DecidableEq γ]
+noncomputable def functionLatent {γ : Type} [Fintype γ] [DecidableEq γ]
     (hp : IsPMF p) (f : α × β → γ) : Latent p where
   ι := γ
   fin := inferInstance
@@ -446,52 +449,6 @@ private lemma functionLatent_isDet {γ : Type} [Fintype γ] [DecidableEq γ]
     exact hc' (by simp [h])
   exact hfc.symm.trans hfc'
 
-/-- The finite latent induced by a deterministic function of `(X,Y)`. -/
-noncomputable def Latent.ofFunction {γ : Type} [Fintype γ] [DecidableEq γ]
-    (hp : IsPMF p) (f : α × β → γ) : Latent p :=
-  functionLatent hp f
-
-omit [DecidableEq α] [DecidableEq β] in
-/-- A function-induced latent is deterministic. -/
-theorem Latent.ofFunction_isDet {γ : Type} [Fintype γ] [DecidableEq γ]
-    (hp : IsPMF p) (f : α × β → γ) :
-    (Latent.ofFunction hp f).IsDet := by
-  exact functionLatent_isDet hp f
-
-/-- The joint law of a function-induced latent is the pushforward along its
-graph embedding. -/
-theorem Latent.ofFunction_joint_eq_push
-    {γ : Type} [Fintype γ] [DecidableEq γ]
-    (hp : IsPMF p) (f : α × β → γ) :
-    (Latent.ofFunction hp f).joint =
-      push (fun z : α × β => (f z, z)) p := by
-  classical
-  change (fun w : γ × (α × β) =>
-      push f p w.1 * conditionedComp (p := p) f w.1 w.2) =
-    push (fun z : α × β => (f z, z)) p
-  funext w
-  rcases w with ⟨c, z⟩
-  change push f p c * conditionedComp (p := p) f c z =
-    push (fun z : α × β => (f z, z)) p (c, z)
-  rw [push_mul_conditionedComp hp f c z]
-  unfold push
-  rw [Finset.sum_filter]
-  have hsum :
-      (∑ x, if (f x, x) = (c, z) then p x else 0) =
-        (if (f z, z) = (c, z) then p z else 0) := by
-    apply Finset.sum_eq_single z
-    · intro x _ hx
-      by_cases hpair : (f x, x) = (c, z)
-      · exact (hx (congrArg Prod.snd hpair)).elim
-      · simp [hpair]
-    · simp only [mem_univ, not_true_eq_false, Prod.mk.injEq, and_true, ite_eq_right_iff,
-        IsEmpty.forall_iff]
-  calc
-    (if f z = c then p z else 0) =
-        (if (f z, z) = (c, z) then p z else 0) := by simp only [Prod.mk.injEq, and_true]
-    _ = ∑ x, if (f x, x) = (c, z) then p x else 0 := hsum.symm
-    _ = ∑ a, if (fun z => (f z, z)) a = (c, z) then p a else 0 := by rfl
-
 private lemma Hvar_push_source
     {Ω Ω' κ : Type*} [Fintype Ω] [Fintype Ω'] [DecidableEq Ω']
     [Fintype κ] [DecidableEq κ]
@@ -499,78 +456,6 @@ private lemma Hvar_push_source
     Hvar a (push e m) = Hvar (a ∘ e) m := by
   unfold Hvar
   rw [push_push]
-
-private lemma condMI_push_source
-    {Ω Ω' κ δ ε : Type*} [Fintype Ω] [Fintype Ω'] [DecidableEq Ω']
-    [Fintype κ] [DecidableEq κ]
-    [Fintype δ] [DecidableEq δ]
-    [Fintype ε] [DecidableEq ε]
-    (e : Ω → Ω') (a : Ω' → κ) (b : Ω' → δ) (c : Ω' → ε)
-    (m : Ω → ℝ) :
-    condMI a b c (push e m) =
-      condMI (a ∘ e) (b ∘ e) (c ∘ e) m := by
-  unfold condMI
-  change Hvar (fun x => (a x, c x)) (push e m) +
-      Hvar (fun x => (b x, c x)) (push e m) -
-      Hvar (fun x => (a x, b x, c x)) (push e m) -
-      Hvar c (push e m) = _
-  rw [Hvar_push_source, Hvar_push_source, Hvar_push_source,
-    Hvar_push_source]
-  rfl
-
-/-- The score of a function-induced latent is exactly the deterministic
-LessWrong expression computed under `p`. -/
-theorem Latent.ofFunction_score_eq_detScore
-    {γ : Type} [Fintype γ] [DecidableEq γ]
-    (hp : IsPMF p) (Γ : α × β → γ) :
-    (Latent.ofFunction hp Γ).score = detScore p Γ := by
-  change
-    condMI (fun w : γ × (α × β) => w.2.1)
-        (fun w => w.2.2) (fun w => w.1) (functionLatent hp Γ).joint
-      + condMI (fun w : γ × (α × β) => w.1)
-          (fun w => w.2.1) (fun w => w.2.2) (functionLatent hp Γ).joint
-      + condMI (fun w : γ × (α × β) => w.1)
-          (fun w => w.2.2) (fun w => w.2.1) (functionLatent hp Γ).joint =
-      detScore p Γ
-  rw [show (functionLatent hp Γ).joint =
-      push (fun z : α × β => (Γ z, z)) p by
-        simpa [Latent.ofFunction] using Latent.ofFunction_joint_eq_push hp Γ]
-  rw [condMI_push_source, condMI_push_source, condMI_push_source]
-  change condMI Prod.fst Prod.snd Γ p
-      + condMI Γ Prod.fst Prod.snd p
-      + condMI Γ Prod.snd Prod.fst p = detScore p Γ
-  rw [condMI_code_X_given_Y hp Γ, condMI_code_Y_given_X hp Γ]
-  unfold detScore
-  ring
-
-/-- On a function-induced latent, the unrestricted finite-latent `DScore`
-reduces exactly to the deterministic function expression `detScore`. -/
-@[simp] theorem Latent.ofFunction_DScore_eq_detScore
-    {γ : Type} [Fintype γ] [DecidableEq γ]
-    (hp : IsPMF p) (Γ : α × β → γ) :
-    (Latent.ofFunction hp Γ).DScore = detScore p Γ := by
-  rw [Latent.DScore_eq_score_add_two_condH_pair,
-    Latent.ofFunction_score_eq_detScore]
-  have hzero :
-      condH
-          (fun w : γ × (α × β) => w.1)
-          (fun w => w.2)
-          (Latent.ofFunction hp Γ).joint = 0 := by
-    change condH (fun w : γ × (α × β) => w.1) (fun w => w.2)
-      (functionLatent hp Γ).joint = 0
-    rw [show (functionLatent hp Γ).joint =
-        push (fun z : α × β => (Γ z, z)) p by
-          simpa [Latent.ofFunction] using
-            Latent.ofFunction_joint_eq_push hp Γ]
-    unfold condH
-    rw [Hvar_push_source, Hvar_push_source]
-    simpa [condH, Function.comp_def] using
-      condH_function_given_pair_zero hp Γ
-  change detScore p Γ +
-      2 * condH (fun w : γ × (α × β) => w.1) (fun w => w.2)
-        (Latent.ofFunction hp Γ).joint = detScore p Γ
-  rw [hzero]
-  ring
 
 omit [DecidableEq α] [DecidableEq β] in
 private lemma Latent.exists_comp_ne_zero (V : Latent p) (v : V.ι) :
@@ -903,6 +788,24 @@ lemma Phi_eq_continuousPhi {q : α × β → ℝ} (hq : IsPMF q) :
   rw [H_eq_continuousEntropy hq, H_eq_continuousEntropy hqX,
     H_eq_continuousEntropy hqY]
 
+/-- The standard simplex in `ι → ℝ` as a set (Mathlib's `stdSimplex` is deprecated in favour of
+the structure `StdSimplex`, which is not a subset of the function space). -/
+def probSimplex (ι : Type*) [Fintype ι] : Set (ι → ℝ) := {f | (∀ i, 0 ≤ f i) ∧ ∑ i, f i = 1}
+
+lemma isCompact_probSimplex (ι : Type*) [Fintype ι] : IsCompact (probSimplex ι) := by
+  have hclosed : IsClosed (probSimplex ι) := by
+    have : probSimplex ι = (⋂ i, {f : ι → ℝ | 0 ≤ f i}) ∩ {f | ∑ i, f i = 1} := by
+      ext f; simp [probSimplex]
+    rw [this]
+    refine IsClosed.inter (isClosed_iInter fun i => isClosed_le continuous_const
+      (continuous_apply i)) (isClosed_eq (by fun_prop) continuous_const)
+  refine IsCompact.of_isClosed_subset (isCompact_univ_pi fun _ => isCompact_Icc
+    (a := (0 : ℝ)) (b := 1)) hclosed ?_
+  intro f hf i _
+  refine ⟨hf.1 i, ?_⟩
+  calc f i ≤ ∑ j, f j := Finset.single_le_sum (fun j _ => hf.1 j) (Finset.mem_univ i)
+    _ = 1 := hf.2
+
 def pmfSet : Set (α × β → ℝ) := {q | IsPMF q}
 
 noncomputable def phiGraph : Set ((α × β → ℝ) × ℝ) :=
@@ -910,7 +813,7 @@ noncomputable def phiGraph : Set ((α × β → ℝ) × ℝ) :=
 
 omit [DecidableEq α] [DecidableEq β] in
 lemma isCompact_pmfSet : IsCompact (pmfSet : Set (α × β → ℝ)) := by
-  have heq : (pmfSet : Set (α × β → ℝ)) = stdSimplex ℝ (α × β) := by
+  have heq : (pmfSet : Set (α × β → ℝ)) = probSimplex (α × β) := by
     ext q
     constructor
     · intro hq
@@ -918,7 +821,7 @@ lemma isCompact_pmfSet : IsCompact (pmfSet : Set (α × β → ℝ)) := by
     · rintro ⟨hq, htotal⟩
       exact ⟨hq, by simpa [mass] using htotal⟩
   rw [heq]
-  exact isCompact_stdSimplex ℝ (α × β)
+  exact isCompact_probSimplex (α × β)
 
 lemma isCompact_phiGraph : IsCompact (phiGraph : Set ((α × β → ℝ) × ℝ)) := by
   let graphMap : (α × β → ℝ) → (α × β → ℝ) × ℝ :=
@@ -947,7 +850,7 @@ private noncomputable def envelopeBarycenter
 private noncomputable def envelopeParams :
     Set ((Fin (envelopeSize (α := α) (β := β)) → ℝ) ×
       (Fin (envelopeSize (α := α) (β := β)) → (α × β → ℝ) × ℝ)) :=
-  stdSimplex ℝ (Fin (envelopeSize (α := α) (β := β))) ×ˢ
+  probSimplex (Fin (envelopeSize (α := α) (β := β))) ×ˢ
     Set.pi (Set.univ : Set (Fin (envelopeSize (α := α) (β := β))))
       (fun _ => phiGraph)
 
@@ -960,7 +863,7 @@ private lemma continuous_envelopeBarycenter :
 private lemma isCompact_envelopeParams :
     IsCompact (envelopeParams (α := α) (β := β)) := by
   unfold envelopeParams
-  apply IsCompact.prod (isCompact_stdSimplex ℝ _)
+  apply IsCompact.prod (isCompact_probSimplex _)
   exact isCompact_univ_pi fun _ => isCompact_phiGraph
 
 private lemma isCompact_envelopeBarycenter_image :
@@ -1246,46 +1149,5 @@ theorem exists_T_optimal_latent (hp : IsPMF p) :
     simpa [scoreOf, V₀] using hmin.trans_eq hscore
   have hT_le_V₀ : T p ≤ V₀.score := T_le_score V₀ hV₀det
   exact ⟨V₀, hV₀det, le_antisymm hV₀_le_T hT_le_V₀⟩
-
-/-- Function-level form of deterministic attainment.  The returned code has
-the fixed alphabet `Fin (card (α × β))`, and depends only on `p`. -/
-theorem exists_T_optimal_code (hp : IsPMF p) :
-    ∃ Γ : α × β → Fin (Fintype.card (α × β)),
-      (Latent.ofFunction hp Γ).score = T p := by
-  obtain ⟨V, hVdet, hVscore⟩ := exists_T_optimal_latent hp
-  refine ⟨V.detCode, ?_⟩
-  calc
-    (Latent.ofFunction hp V.detCode).score = V.score := by
-      exact V.functionLatent_detCode_score_eq hp hVdet
-    _ = T p := hVscore
-
-/-- Literal function-code formulation of `T`: optimizing over bundled
-deterministic latents is exactly the same as optimizing `detScore` over codes
-with the fixed alphabet `Fin (card (α × β))`. -/
-theorem T_eq_iInf_detScore_codes
-    {p : α × β → ℝ} (hp : IsPMF p) :
-    T p =
-      ⨅ Γ : α × β → Fin (Fintype.card (α × β)), detScore p Γ := by
-  obtain ⟨Γ₀, hΓ₀⟩ := exists_T_optimal_code hp
-  let : Nonempty (α × β → Fin (Fintype.card (α × β))) := ⟨Γ₀⟩
-  apply le_antisymm
-  · refine le_ciInf fun Γ => ?_
-    rw [← Latent.ofFunction_score_eq_detScore hp Γ]
-    exact T_le_score (Latent.ofFunction hp Γ)
-      (Latent.ofFunction_isDet hp Γ)
-  · have hb : BddBelow
-        (Set.range fun f : α × β → Fin (Fintype.card (α × β)) =>
-          detScore p f) := by
-      refine ⟨0, ?_⟩
-      rintro _ ⟨f, rfl⟩
-      change 0 ≤ detScore p f
-      rw [← Latent.ofFunction_score_eq_detScore hp f]
-      exact (Latent.ofFunction hp f).score_nonneg
-    calc
-      (⨅ f : α × β → Fin (Fintype.card (α × β)), detScore p f) ≤
-          detScore p Γ₀ := ciInf_le hb Γ₀
-      _ = (Latent.ofFunction hp Γ₀).score :=
-        (Latent.ofFunction_score_eq_detScore hp Γ₀).symm
-      _ = T p := hΓ₀
 
 end stoch_to_det

@@ -1,4 +1,5 @@
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Duality
+module
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Duality
 
 /-!
 # §3. Reduction to connected supports
@@ -15,6 +16,8 @@ The reduction quantifies over laws on the same `α × β` — a component is a l
 on the ambient product that vanishes off the component — so no alphabet
 transport arises. See the support-handling note in `stoch_to_det.Functionals`.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -401,31 +404,6 @@ private lemma Psi_eq_components {p : α × β → ℝ} (D : ComponentDecomp p) :
       rw [Finset.mul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
     _ = ∑ i, D.wt i *
           (2 * H (D.part i) - H (mX (D.part i)) - H (mY (D.part i))) := by
-      apply Finset.sum_congr rfl
-      intro i _
-      ring
-
-private lemma Phi_eq_components_sub_H {p : α × β → ℝ} (D : ComponentDecomp p) :
-    Phi p = (∑ i, D.wt i * Phi (D.part i)) - H D.wt := by
-  rw [Phi]
-  rw [H_eq_components D, HX_eq_components D, HY_eq_components D]
-  simp only [Phi]
-  calc
-    3 * (H D.wt + ∑ i, D.wt i * H (D.part i)) -
-          2 * (H D.wt + ∑ i, D.wt i * H (mX (D.part i))) -
-          2 * (H D.wt + ∑ i, D.wt i * H (mY (D.part i))) =
-        (3 * (∑ i, D.wt i * H (D.part i)) -
-          2 * (∑ i, D.wt i * H (mX (D.part i))) -
-          2 * (∑ i, D.wt i * H (mY (D.part i)))) - H D.wt := by ring
-    _ = (∑ i, (3 * (D.wt i * H (D.part i)) -
-          2 * (D.wt i * H (mX (D.part i))) -
-          2 * (D.wt i * H (mY (D.part i))))) - H D.wt := by
-      rw [Finset.mul_sum, Finset.mul_sum, Finset.mul_sum,
-        ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
-    _ = (∑ i, D.wt i *
-          (3 * H (D.part i) - 2 * H (mX (D.part i)) -
-            2 * H (mY (D.part i)))) - H D.wt := by
-      congr 1
       apply Finset.sum_congr rfl
       intro i _
       ring

@@ -1,4 +1,5 @@
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Entropy
+module
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Entropy
 
 /-!
 # Latents, the score, and the two functionals `τ` and `T`
@@ -16,6 +17,8 @@ quantifies over the same `α`, `β`.
 Statements consequently carry `Supported` / positivity hypotheses explicitly;
 see the junk-value note in `stoch_to_det.Prelude`.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -150,243 +153,6 @@ lemma const_isDet (hp : IsPMF p) : (const hp).IsDet := by
   have : Subsingleton (const hp).ι := inferInstanceAs (Subsingleton Unit)
   intro z v v' _ _; exact Subsingleton.elim v v'
 
-omit [DecidableEq α] [DecidableEq β] in
-private lemma Hvar_const_joint_equiv {γ δ : Type*} [Fintype γ] [DecidableEq γ]
-    [Fintype δ] [DecidableEq δ] (hp : IsPMF p) (e : γ ≃ δ) (f : α × β → γ) :
-    Hvar (fun w : (const hp).ι × (α × β) => e (f w.2)) (const hp).joint =
-      Hvar f p := by
-  unfold Hvar
-  have hpush_joint :
-      push (fun w : (const hp).ι × (α × β) => e (f w.2)) (const hp).joint =
-        push (fun z => e (f z)) p := by
-    have hjoint : (const hp).joint = fun w => p w.2 := by
-      funext w
-      simp [joint, const]
-    rw [hjoint]
-    change push (fun w : Unit × (α × β) => e (f w.2))
-        (fun w : Unit × (α × β) => p w.2) = push (fun z => e (f z)) p
-    funext c
-    simp only [push]
-    simp_rw [Finset.sum_filter]
-    rw [Fintype.sum_prod_type]
-    simp only [univ_unique, PUnit.default_eq_unit, sum_const, card_singleton, one_smul]
-  rw [hpush_joint]
-  change H (push (e ∘ f) p) = H (push f p)
-  rw [← push_push f e p]
-  let m := push f p
-  change H (push e m) = H m
-  have hpush : push e m = fun d => m (e.symm d) := by
-    funext d
-    rw [push]
-    apply Finset.sum_eq_single (e.symm d)
-    · intro b hb hne
-      have heb : e b = d := (Finset.mem_filter.mp hb).2
-      exact (hne (e.eq_symm_apply.mpr heb)).elim
-    · intro hnot
-      exact (hnot (by simp only [mem_filter, mem_univ, Equiv.apply_symm_apply, and_self])).elim
-  rw [hpush]
-  unfold H mass
-  rw [e.symm.sum_comp m]
-  exact e.symm.sum_comp (fun a => m a * lg ((∑ b, m b) / m a))
-
-/-- §0: the constant latent has score `I(X;Y)`. -/
-lemma score_const (hp : IsPMF p) : (const hp).score = Ixy p := by
-  have hId : Hvar (fun z : α × β => z) p = H p := by
-    unfold Hvar
-    apply congrArg H
-    funext z
-    rw [push]
-    apply Finset.sum_eq_single z
-    · intro b hb hne
-      have hbz : b = z := (Finset.mem_filter.mp hb).2
-      exact (hne hbz).elim
-    · intro hnot
-      exact (hnot (by simp only [mem_filter, mem_univ, and_self])).elim
-  have Hvar_const : Hvar (fun _ : α × β => ()) p = 0 := by
-    have hsum : ∑ z, p z = 1 := by simpa [mass] using hp.total
-    simp [Hvar, H, push, mass, hsum]
-  have hXV :
-      Hvar (fun w : (const hp).ι × (α × β) => (w.2.1, w.1)) (const hp).joint =
-        H (mX p) := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) =>
-            ((Equiv.prodPUnit α).symm : α ≃ α × Unit) w.2.1)
-          (const hp).joint := by
-            apply congrArg (fun k => Hvar k (const hp).joint)
-            funext w
-            rcases w with ⟨⟨⟩, ⟨x, y⟩⟩
-            rfl
-      _ = Hvar (fun z : α × β => z.1) p :=
-        Hvar_const_joint_equiv hp
-          ((Equiv.prodPUnit α).symm : α ≃ α × Unit) (fun z => z.1)
-      _ = H (mX p) := rfl
-  have hYV :
-      Hvar (fun w : (const hp).ι × (α × β) => (w.2.2, w.1)) (const hp).joint =
-        H (mY p) := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) =>
-            ((Equiv.prodPUnit β).symm : β ≃ β × Unit) w.2.2)
-          (const hp).joint := by
-            apply congrArg (fun k => Hvar k (const hp).joint)
-            funext w
-            rcases w with ⟨⟨⟩, ⟨x, y⟩⟩
-            rfl
-      _ = Hvar (fun z : α × β => z.2) p :=
-        Hvar_const_joint_equiv hp
-          ((Equiv.prodPUnit β).symm : β ≃ β × Unit) (fun z => z.2)
-      _ = H (mY p) := rfl
-  have hXYV :
-      Hvar (fun w : (const hp).ι × (α × β) => (w.2.1, w.2.2, w.1))
-          (const hp).joint = H p := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) =>
-            (Equiv.prodCongr (Equiv.refl α)
-              ((Equiv.prodPUnit β).symm : β ≃ β × Unit)) w.2)
-          (const hp).joint := by
-            apply congrArg (fun k => Hvar k (const hp).joint)
-            funext w
-            rcases w with ⟨⟨⟩, ⟨x, y⟩⟩
-            rfl
-      _ = Hvar (fun z : α × β => z) p :=
-        Hvar_const_joint_equiv hp
-          (Equiv.prodCongr (Equiv.refl α)
-            ((Equiv.prodPUnit β).symm : β ≃ β × Unit)) (fun z => z)
-      _ = H p := hId
-  have hV :
-      Hvar (fun w : (const hp).ι × (α × β) => w.1) (const hp).joint = 0 := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) => (Equiv.refl Unit) ())
-          (const hp).joint := by
-            apply congrArg (fun k => Hvar k (const hp).joint)
-            funext w
-            rcases w with ⟨⟨⟩, ⟨x, y⟩⟩
-            rfl
-      _ = Hvar (fun _ : α × β => ()) p :=
-        Hvar_const_joint_equiv hp (Equiv.refl Unit) (fun _ : α × β => ())
-      _ = 0 := Hvar_const
-  have hVY :
-      Hvar (fun w : (const hp).ι × (α × β) => (w.1, w.2.2)) (const hp).joint =
-        H (mY p) := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) =>
-            ((Equiv.punitProd β).symm : β ≃ Unit × β) w.2.2)
-          (const hp).joint := by
-            apply congrArg (fun k => Hvar k (const hp).joint)
-            funext w
-            rcases w with ⟨⟨⟩, ⟨x, y⟩⟩
-            rfl
-      _ = Hvar (fun z : α × β => z.2) p :=
-        Hvar_const_joint_equiv hp
-          ((Equiv.punitProd β).symm : β ≃ Unit × β) (fun z => z.2)
-      _ = H (mY p) := rfl
-  have hXY :
-      Hvar (fun w : (const hp).ι × (α × β) => (w.2.1, w.2.2))
-          (const hp).joint = H p := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) => (Equiv.refl (α × β)) w.2)
-          (const hp).joint := by
-            apply congrArg (fun k => Hvar k (const hp).joint)
-            funext w
-            rcases w with ⟨u, ⟨x, y⟩⟩
-            rfl
-      _ = Hvar (fun z : α × β => z) p :=
-        Hvar_const_joint_equiv hp (Equiv.refl (α × β)) (fun z => z)
-      _ = H p := hId
-  have hVXY :
-      Hvar (fun w : (const hp).ι × (α × β) => (w.1, w.2.1, w.2.2))
-          (const hp).joint = H p := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) =>
-            ((Equiv.punitProd (α × β)).symm : (α × β) ≃ Unit × (α × β)) w.2)
-          (const hp).joint := by
-            apply congrArg (fun k => Hvar k (const hp).joint)
-            funext w
-            rcases w with ⟨⟨⟩, ⟨x, y⟩⟩
-            rfl
-      _ = Hvar (fun z : α × β => z) p :=
-        Hvar_const_joint_equiv hp
-          ((Equiv.punitProd (α × β)).symm : (α × β) ≃ Unit × (α × β)) (fun z => z)
-      _ = H p := hId
-  have hY :
-      Hvar (fun w : (const hp).ι × (α × β) => w.2.2) (const hp).joint =
-        H (mY p) := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) => (Equiv.refl β) w.2.2)
-          (const hp).joint := rfl
-      _ = Hvar (fun z : α × β => z.2) p :=
-        Hvar_const_joint_equiv hp (Equiv.refl β) (fun z => z.2)
-      _ = H (mY p) := rfl
-  have hVX :
-      Hvar (fun w : (const hp).ι × (α × β) => (w.1, w.2.1)) (const hp).joint =
-        H (mX p) := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) =>
-            ((Equiv.punitProd α).symm : α ≃ Unit × α) w.2.1)
-          (const hp).joint := by
-            apply congrArg (fun k => Hvar k (const hp).joint)
-            funext w
-            rcases w with ⟨⟨⟩, ⟨x, y⟩⟩
-            rfl
-      _ = Hvar (fun z : α × β => z.1) p :=
-        Hvar_const_joint_equiv hp
-          ((Equiv.punitProd α).symm : α ≃ Unit × α) (fun z => z.1)
-      _ = H (mX p) := rfl
-  have hYX :
-      Hvar (fun w : (const hp).ι × (α × β) => (w.2.2, w.2.1))
-          (const hp).joint = H p := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) => (Equiv.prodComm α β) w.2)
-          (const hp).joint := by
-            apply congrArg (fun k => Hvar k (const hp).joint)
-            funext w
-            rcases w with ⟨u, ⟨x, y⟩⟩
-            rfl
-      _ = Hvar (fun z : α × β => z) p :=
-        Hvar_const_joint_equiv hp (Equiv.prodComm α β) (fun z => z)
-      _ = H p := hId
-  have hVYX :
-      Hvar (fun w : (const hp).ι × (α × β) => (w.1, w.2.2, w.2.1))
-          (const hp).joint = H p := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) =>
-            ((Equiv.prodComm α β).trans
-              ((Equiv.punitProd (β × α)).symm : (β × α) ≃ Unit × (β × α))) w.2)
-          (const hp).joint := by
-            apply congrArg (fun k => Hvar k (const hp).joint)
-            funext w
-            rcases w with ⟨⟨⟩, ⟨x, y⟩⟩
-            rfl
-      _ = Hvar (fun z : α × β => z) p :=
-        Hvar_const_joint_equiv hp
-          ((Equiv.prodComm α β).trans
-            ((Equiv.punitProd (β × α)).symm : (β × α) ≃ Unit × (β × α))) (fun z => z)
-      _ = H p := hId
-  have hX :
-      Hvar (fun w : (const hp).ι × (α × β) => w.2.1) (const hp).joint =
-        H (mX p) := by
-    calc
-      _ = Hvar
-          (fun w : (const hp).ι × (α × β) => (Equiv.refl α) w.2.1)
-          (const hp).joint := rfl
-      _ = Hvar (fun z : α × β => z.1) p :=
-        Hvar_const_joint_equiv hp (Equiv.refl α) (fun z => z.1)
-      _ = H (mX p) := rfl
-  unfold score condMI
-  rw [hXV, hYV, hXYV, hV, hVY, hXY, hVXY, hY, hVX, hYX, hVYX, hX]
-  unfold Ixy
-  ring
-
 end Latent
 
 /-! ### The two functionals
@@ -401,14 +167,6 @@ noncomputable def tau (p : α × β → ℝ) : ℝ := ⨅ V : Latent p, V.score
 
 /-- `T(p) := inf over deterministic `A = f(X,Y)` of `S_p(A)` (Main Theorem). -/
 noncomputable def T (p : α × β → ℝ) : ℝ := ⨅ V : {V : Latent p // V.IsDet}, V.1.score
-
-/-- The deterministic LessWrong expression
-`I(X;Y | Γ) + H(Γ | X) + H(Γ | Y)`. -/
-noncomputable def detScore {γ : Type*} [Fintype γ] [DecidableEq γ]
-    (p : α × β → ℝ) (Γ : α × β → γ) : ℝ :=
-  condMI (fun z : α × β => z.1) (fun z => z.2) Γ p +
-    condH Γ (fun z : α × β => z.1) p +
-    condH Γ (fun z : α × β => z.2) p
 
 /-- Conditional mutual information as a difference of conditional
 entropies. -/
@@ -444,52 +202,6 @@ theorem condH_function_given_pair_zero
   unfold condH
   change Hvar graph p - Hvar (fun z : α × β => z) p = 0
   linarith
-
-theorem condMI_code_X_given_Y
-    {γ : Type*} [Fintype γ] [DecidableEq γ]
-    {p : α × β → ℝ} (hp : IsPMF p) (Γ : α × β → γ) :
-    condMI Γ (fun z : α × β => z.1) (fun z => z.2) p =
-      condH Γ (fun z : α × β => z.2) p := by
-  rw [condMI_eq_condH_sub_pair hp]
-  have hz := condH_function_given_pair_zero hp Γ
-  have hz' : condH Γ (fun z : α × β => (z.1, z.2)) p = 0 := by
-    simpa using hz
-  rw [hz', sub_zero]
-
-theorem condMI_code_Y_given_X
-    {γ : Type*} [Fintype γ] [DecidableEq γ]
-    {p : α × β → ℝ} (hp : IsPMF p) (Γ : α × β → γ) :
-    condMI Γ (fun z : α × β => z.2) (fun z => z.1) p =
-      condH Γ (fun z : α × β => z.1) p := by
-  rw [condMI_eq_condH_sub_pair hp]
-  have hz := condH_function_given_pair_zero hp Γ
-  have hz' : condH Γ (fun z : α × β => (z.2, z.1)) p = 0 := by
-    unfold condH at hz ⊢
-    have hswap :
-        Hvar (fun z : α × β => (Γ z, (z.2, z.1))) p =
-          Hvar (fun z : α × β => (Γ z, (z.1, z.2))) p := by
-      let e : γ × (α × β) ≃ γ × (β × α) :=
-        Equiv.prodCongr (Equiv.refl γ) (Equiv.prodComm α β)
-      have he : (fun z : α × β => (Γ z, (z.2, z.1))) =
-          fun z => e (Γ z, (z.1, z.2)) := by
-        funext z
-        rcases z with ⟨x, y⟩
-        rfl
-      rw [he]
-      exact Hvar_equiv hp (fun z : α × β => (Γ z, (z.1, z.2))) e
-    have hbase : Hvar (fun z : α × β => (z.2, z.1)) p =
-        Hvar (fun z : α × β => (z.1, z.2)) p := by
-      have he : (fun z : α × β => (z.2, z.1)) =
-          fun z => (Equiv.prodComm α β) (z.1, z.2) := by
-        funext z
-        rcases z with ⟨x, y⟩
-        rfl
-      rw [he]
-      exact Hvar_equiv hp (fun z : α × β => (z.1, z.2))
-        (Equiv.prodComm α β)
-    rw [hswap, hbase]
-    exact hz
-  rw [hz', sub_zero]
 
 /-- For every finite latent, the LessWrong expression differs from the stoch_to_det
 score by exactly twice the residual nondeterminism `H(Γ | X,Y)`. -/
@@ -537,10 +249,6 @@ theorem Latent.DScore_eq_score_add_two_condH_pair
   rw [hGX, hGY, hswap]
   ring
 
-lemma tau_nonneg (p : α × β → ℝ) : 0 ≤ tau p := by
-  unfold tau
-  exact Real.iInf_nonneg fun V => V.score_nonneg
-
 /-- The infimum `tau p` is below the score of every finite latent. -/
 lemma tau_le_score {p : α × β → ℝ} (V : Latent p) : tau p ≤ V.score := by
   unfold tau
@@ -549,27 +257,6 @@ lemma tau_le_score {p : α × β → ℝ} (V : Latent p) : tau p ≤ V.score := 
       rintro _ ⟨W, rfl⟩
       exact W.score_nonneg⟩
   exact ciInf_le hb V
-
-lemma T_nonneg (p : α × β → ℝ) : 0 ≤ T p := by
-  unfold T
-  exact Real.iInf_nonneg fun V => V.1.score_nonneg
-
-/-- §0: `τ ≤ T ≤ I(X;Y)`. -/
-lemma tau_le_T {p : α × β → ℝ} (hp : IsPMF p) : tau p ≤ T p := by
-  let V0 : {V : Latent p // V.IsDet} := ⟨Latent.const hp, Latent.const_isDet hp⟩
-  let : Nonempty {V : Latent p // V.IsDet} := ⟨V0⟩
-  unfold tau T
-  refine le_ciInf fun V => ?_
-  have hb : BddBelow (Set.range fun W : Latent p => W.score) :=
-    ⟨0, by rintro _ ⟨W, rfl⟩; exact W.score_nonneg⟩
-  exact ciInf_le hb V.1
-
-lemma T_le_Ixy {p : α × β → ℝ} (hp : IsPMF p) : T p ≤ Ixy p := by
-  rw [← Latent.score_const hp]
-  unfold T
-  have hb : BddBelow (Set.range fun W : {W : Latent p // W.IsDet} => W.1.score) :=
-    ⟨0, by rintro _ ⟨W, rfl⟩; exact W.1.score_nonneg⟩
-  exact ciInf_le_of_le hb ⟨Latent.const hp, Latent.const_isDet hp⟩ le_rfl
 
 /-- The score of any single deterministic latent bounds `T` from above. This is
 how §12 uses `T`: Corollary 4.4 exhibits one good seed. -/

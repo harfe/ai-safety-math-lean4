@@ -1,10 +1,11 @@
-import Mathlib.Analysis.Convex.StdSimplex
-import Mathlib.Analysis.Convex.Caratheodory
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-import Mathlib.Analysis.LocallyConvex.Separation
-import Mathlib.Data.Fintype.EquivFin
-import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Envelope
+module
+public import Mathlib.Analysis.Convex.StdSimplex
+public import Mathlib.Analysis.Convex.Caratheodory
+public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+public import Mathlib.Analysis.LocallyConvex.Separation
+public import Mathlib.Data.Fintype.EquivFin
+public import Mathlib.LinearAlgebra.AffineSpace.FiniteDimensional
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Envelope
 
 /-!
 # §2. Kernel duality, contacts, and the defect functional
@@ -34,6 +35,8 @@ The `(⇒)` direction of Theorem 2.3 and Corollary 2.4 both
 use a first-order (one-sided `ε^{2/3}` perturbation) argument at a maximizer of
 `Λ_w` on a simplex, for which Mathlib has no packaged KKT statement.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -535,14 +538,14 @@ theorem valid_iff_feasible {S : Finset (α × β)} {w : α × β → ℝ} (hw : 
     by_cases hSempty : S = ∅
     · simp [Lambda, hSempty]
     let K : Set ((α → ℝ) × (β → ℝ)) :=
-      Set.prod (stdSimplex ℝ α) (stdSimplex ℝ β)
-    have huΔ : u ∈ stdSimplex ℝ α := by
+      Set.prod (probSimplex α) (probSimplex β)
+    have huΔ : u ∈ probSimplex α := by
       exact ⟨hu.nonneg, by simpa [mass] using hu.total⟩
-    have hvΔ : v ∈ stdSimplex ℝ β := by
+    have hvΔ : v ∈ probSimplex β := by
       exact ⟨hv.nonneg, by simpa [mass] using hv.total⟩
     have huvK : (u, v) ∈ K := ⟨huΔ, hvΔ⟩
     have hK : IsCompact K :=
-      (isCompact_stdSimplex ℝ α).prod (isCompact_stdSimplex ℝ β)
+      (isCompact_probSimplex α).prod (isCompact_probSimplex β)
     have hcont : Continuous (fun uv : (α → ℝ) × (β → ℝ) =>
         Lambda S w uv.1 uv.2) := by
       unfold Lambda
@@ -551,8 +554,8 @@ theorem valid_iff_feasible {S : Finset (α × β)} {w : α × β → ℝ} (hw : 
       hK.exists_isMaxOn ⟨(u, v), huvK⟩ hcont.continuousOn
     let u₀ : α → ℝ := uv.1
     let v₀ : β → ℝ := uv.2
-    have hu₀Δ : u₀ ∈ stdSimplex ℝ α := huv.1
-    have hv₀Δ : v₀ ∈ stdSimplex ℝ β := huv.2
+    have hu₀Δ : u₀ ∈ probSimplex α := huv.1
+    have hv₀Δ : v₀ ∈ probSimplex β := huv.2
     have hu₀ : IsPMF u₀ :=
       ⟨hu₀Δ.1, by simpa [mass] using hu₀Δ.2⟩
     have hv₀ : IsPMF v₀ :=
@@ -983,7 +986,7 @@ private lemma isCompact_dualPmfSet (S : Finset (α × β)) :
       isClosed_eq (continuous_apply z) continuous_const
   have heq :
       dualPmfSet S =
-        stdSimplex ℝ (α × β) ∩ Z := by
+        probSimplex (α × β) ∩ Z := by
     ext q
     constructor
     · rintro ⟨hq, hqS⟩
@@ -991,7 +994,7 @@ private lemma isCompact_dualPmfSet (S : Finset (α × β)) :
     · rintro ⟨⟨hq, htotal⟩, hqS⟩
       exact ⟨⟨hq, by simpa [mass] using htotal⟩, hqS⟩
   rw [heq]
-  exact (isCompact_stdSimplex ℝ (α × β)).inter_right hZclosed
+  exact (isCompact_probSimplex (α × β)).inter_right hZclosed
 
 private lemma isCompact_dualPhiGraph (S : Finset (α × β)) :
     IsCompact (dualPhiGraph S : Set ((α × β → ℝ) × ℝ)) := by
@@ -1021,7 +1024,7 @@ private noncomputable def dualHullBarycenter
 private noncomputable def dualHullParams (S : Finset (α × β)) :
     Set ((Fin (dualHullSize (α := α) (β := β)) → ℝ) ×
       (Fin (dualHullSize (α := α) (β := β)) → (α × β → ℝ) × ℝ)) :=
-  stdSimplex ℝ (Fin (dualHullSize (α := α) (β := β))) ×ˢ
+  probSimplex (Fin (dualHullSize (α := α) (β := β))) ×ˢ
     Set.pi (Set.univ : Set (Fin (dualHullSize (α := α) (β := β))))
       (fun _ => dualPhiGraph S)
 
@@ -1034,7 +1037,7 @@ private lemma continuous_dualHullBarycenter :
 private lemma isCompact_dualHullParams (S : Finset (α × β)) :
     IsCompact (dualHullParams S) := by
   unfold dualHullParams
-  apply IsCompact.prod (isCompact_stdSimplex ℝ _)
+  apply IsCompact.prod (isCompact_probSimplex _)
   exact isCompact_univ_pi fun _ => isCompact_dualPhiGraph S
 
 private lemma dualHullBarycenter_image_subset (S : Finset (α × β)) :

@@ -1,10 +1,11 @@
-import Mathlib.Algebra.Order.Chebyshev
-import Mathlib.Analysis.MeanInequalities
-import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Prelude
+module
+public import Mathlib.Algebra.Order.Chebyshev
+public import Mathlib.Analysis.MeanInequalities
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Tactic.FieldSimp
+public import Mathlib.Tactic.Linarith
+public import Mathlib.Tactic.Positivity
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Prelude
 
 /-!
 # Finite entropy and mutual information
@@ -28,6 +29,8 @@ Random variables are plain functions `f : α → γ` out of the sample type, and
 every entropy is the entropy of a **pushforward** `push f m`. Marginals,
 cluster maps, winner cells, and component indices are all `push`.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -121,49 +124,6 @@ lemma H_nonneg_of_isPMF {m : α → ℝ} (hm : IsPMF m) : 0 ≤ H m := by
   apply (mul_nonneg_iff_of_pos_left (Real.log_pos one_lt_two)).mp
   rw [hEq]
   exact hsum
-
-/-- Entropy of a probability law is at most `lg |α|`. -/
-lemma H_le_card {m : α → ℝ} (hm : IsPMF m) : H m ≤ lg (Fintype.card α) := by
-  have huniv : (univ : Finset α).Nonempty := by
-    by_contra h
-    rw [Finset.not_nonempty_iff_eq_empty] at h
-    have hmass : mass m = 0 := by simp [mass, h]
-    linarith [hm.total]
-  have hcard_nat : 0 < Fintype.card α := by
-    simpa using huniv.card_pos
-  let n : ℝ := Fintype.card α
-  have hn : 0 < n := by
-    dsimp [n]
-    exact_mod_cast hcard_nat
-  have hweights : ∑ _a : α, n⁻¹ = 1 := by
-    simp [n, hn.ne']
-  have hj := Real.concaveOn_negMulLog.le_map_sum
-    (t := (univ : Finset α)) (w := fun _ => n⁻¹) (p := m)
-    (fun _ _ => inv_nonneg.mpr hn.le) hweights
-    (fun a _ => hm.nonneg a)
-  simp only [smul_eq_mul] at hj
-  have hm_sum : ∑ a, m a = 1 := by simpa [mass] using hm.total
-  have hj' : n⁻¹ * (∑ a, Real.negMulLog (m a)) ≤ Real.negMulLog n⁻¹ := by
-    calc
-      n⁻¹ * (∑ a, Real.negMulLog (m a))
-          = ∑ a, n⁻¹ * Real.negMulLog (m a) := Finset.mul_sum _ _ _
-      _ ≤ Real.negMulLog (∑ a, n⁻¹ * m a) := hj
-      _ = Real.negMulLog (n⁻¹ * ∑ a, m a) := by rw [Finset.mul_sum]
-      _ = Real.negMulLog n⁻¹ := by rw [hm_sum, mul_one]
-  have hscaled := mul_le_mul_of_nonneg_left hj' hn.le
-  have hleft : n * (n⁻¹ * ∑ a, Real.negMulLog (m a)) =
-      ∑ a, Real.negMulLog (m a) := by
-    field_simp [hn.ne']
-  have hright : n * Real.negMulLog n⁻¹ = Real.log n := by
-    rw [Real.negMulLog, Real.log_inv]
-    field_simp [hn.ne']
-  rw [hleft, hright] at hscaled
-  have hEq := H_eq_negMulLog hm.isFinMeas
-  rw [hm.total, Real.log_one, mul_zero, zero_add] at hEq
-  rw [lg_eq_log_div]
-  apply (le_div_iff₀ (Real.log_pos one_lt_two)).2
-  rw [mul_comm, hEq]
-  simpa [n] using hscaled
 
 /-- Finite Gibbs inequality, with the support condition made explicit to avoid
 Lean's junk value for division and logarithm at zero. -/
@@ -690,16 +650,6 @@ lemma MI_le_of_comp {m : α → ℝ} (hm : IsPMF m) (f : α → γ) (g : α → 
   dsimp [ug] at hchain hcond
   linarith
 
-/-- `I ≤ H`: mutual information is bounded by either marginal entropy.
-Used in Theorem 12.1 (`R_cell ≤ 3 I(A;Z ∣ ε,L₀) ≤ 3 H(A ∣ ε,L₀)`). -/
-lemma MI_le_Hvar {m : α → ℝ} (hm : IsPMF m) (f : α → γ) (g : α → δ) :
-    MI f g m ≤ Hvar f m := by
-  have hg : Hvar g m ≤ Hvar (fun a => (f a, g a)) m := by
-    have h := Hvar_comp_le hm (fun a => (f a, g a)) Prod.snd
-    simpa [Function.comp_def] using h
-  unfold MI
-  linarith
-
 end Info
 
 /-! ### Marginals on a product
@@ -728,36 +678,6 @@ noncomputable def Ixy (q : α × β → ℝ) : ℝ := H (mX q) + H (mY q) - H q
 /-- §0: `Φ(q) = Ψ(q) − I_q(X;Y)`. Pure algebra. -/
 lemma Phi_eq_Psi_sub_Ixy (q : α × β → ℝ) : Phi q = Psi q - Ixy q := by
   unfold Phi Psi Ixy; ring
-
-/-- §0: `Ψ(q) = H_q(X ∣ Y) + H_q(Y ∣ X) ≥ 0` for a law `q`. -/
-lemma Psi_nonneg {q : α × β → ℝ} (hq : IsPMF q) : 0 ≤ Psi q := by
-  have hX : H (mX q) ≤ H q := H_push_le (f := Prod.fst) hq
-  have hY : H (mY q) ≤ H q := H_push_le (f := Prod.snd) hq
-  unfold Psi
-  linarith
-
-/-- `Ψ` and `Φ` are 1-homogeneous, like `𝖧`. -/
-lemma Psi_smul {m : α × β → ℝ} (hm : IsFinMeas m) {c : ℝ} (hc : 0 ≤ c) :
-    Psi (fun z => c * m z) = c * Psi m := by
-  have hX : mX (fun z => c * m z) = fun x => c * mX m x := by
-    exact push_smul Prod.fst m c
-  have hY : mY (fun z => c * m z) = fun y => c * mY m y := by
-    exact push_smul Prod.snd m c
-  unfold Psi
-  rw [H_smul hm hc, hX, H_smul (isFinMeas_push hm) hc,
-    hY, H_smul (isFinMeas_push hm) hc]
-  ring
-
-lemma Phi_smul {m : α × β → ℝ} (hm : IsFinMeas m) {c : ℝ} (hc : 0 ≤ c) :
-    Phi (fun z => c * m z) = c * Phi m := by
-  have hX : mX (fun z => c * m z) = fun x => c * mX m x := by
-    exact push_smul Prod.fst m c
-  have hY : mY (fun z => c * m z) = fun y => c * mY m y := by
-    exact push_smul Prod.snd m c
-  unfold Phi
-  rw [H_smul hm hc, hX, H_smul (isFinMeas_push hm) hc,
-    hY, H_smul (isFinMeas_push hm) hc]
-  ring
 
 end Product
 

@@ -1,5 +1,6 @@
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Main
-import AISafetyMath.Solutions.NL_Conjecture.Conjecture
+module
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Main
+public import AISafetyMath.Solutions.NL_Conjecture.Conjecture
 
 /-!
 # Bridge lemmas: `stoch_to_det` ↔ `NaturalLatents`
@@ -11,9 +12,11 @@ Connects `stoch_to_det.T_le_Cstar` (real-valued PMFs, `Latent p`, bits via
 `ENNReal`-valued KL/entropy quantities, nats).
 
 The files under `NL_Conjecture/DLorell/` are from
-https://github.com/DLorell/stoch_to_det, with minor modifications.
-The glue code connecting them to `NaturalLatents` in this file is original.
+https://github.com/DLorell/stoch_to_det, © the original authors; the glue
+code connecting them to `NaturalLatents` in this file is original.
 -/
+
+@[expose] public section
 
 namespace NaturalLatents.Bridge
 
@@ -252,11 +255,12 @@ theorem rnDeriv_mul_singleton (μ ν : Measure Z) [SigmaFinite μ] [SigmaFinite 
   rw [withDensity_apply _ (measurableSet_singleton z),
     lintegral_singleton' (μ.measurable_rnDeriv ν)]
 
-set_option linter.unusedFintypeInType false in
+omit [Fintype Z] in
 /-- On a finite atomic space, absolute continuity is a pointwise condition on atoms. -/
-theorem absolutelyContinuous_of_singleton (μ ν : Measure Z)
+theorem absolutelyContinuous_of_singleton [Finite Z] (μ ν : Measure Z)
     (h : ∀ z, ν {z} = 0 → μ {z} = 0) : μ ≪ ν := by
   classical
+  have := Fintype.ofFinite Z
   intro s hs
   have hset : μ s = ∑ z ∈ s.toFinset, μ {z} := by
     rw [MeasureTheory.sum_measure_singleton]
@@ -750,20 +754,6 @@ theorem condMI_comm {m : α → ℝ} (hm : stoch_to_det.IsPMF m) (f : α → γ)
   rw [hswap]
   ring
 
-/-- Re-encoding the second argument of `condMI` by an equivalence. -/
-theorem condMI_equiv₂ {m : α → ℝ} (hm : stoch_to_det.IsPMF m) (f : α → γ) (g : α → δ)
-    (h : α → κ) (e : δ ≃ δ') :
-    stoch_to_det.condMI f (fun a => e (g a)) h m = stoch_to_det.condMI f g h m := by
-  have h1 : stoch_to_det.Hvar (fun a => (e (g a), h a)) m =
-      stoch_to_det.Hvar (fun a => (g a, h a)) m :=
-    stoch_to_det.Hvar_equiv hm (fun a => (g a, h a)) (e.prodCongr (Equiv.refl κ))
-  have h2 : stoch_to_det.Hvar (fun a => (f a, e (g a), h a)) m =
-      stoch_to_det.Hvar (fun a => (f a, g a, h a)) m :=
-    stoch_to_det.Hvar_equiv hm (fun a => (f a, g a, h a))
-      ((Equiv.refl γ).prodCongr (e.prodCongr (Equiv.refl κ)))
-  unfold stoch_to_det.condMI
-  rw [h1, h2]
-
 /-- Re-encoding the conditioning argument of `condMI` by an equivalence. -/
 theorem condMI_equiv₃ {m : α → ℝ} (hm : stoch_to_det.IsPMF m) (f : α → γ) (g : α → δ)
     (h : α → κ) (e : κ ≃ κ') :
@@ -824,129 +814,6 @@ end Relabel
 theorem isPMF_cast {S : Type} (i₁ i₂ : Fintype S) {f : S → ℝ}
     (h : @stoch_to_det.IsPMF S i₁ f) : @stoch_to_det.IsPMF S i₂ f := by
   rw [Subsingleton.elim i₂ i₁]; exact h
-
-/-- §5. Every `stoch_to_det.Latent p` produces a `HasStochasticNL` witness. -/
-theorem hasStochasticNL_of_latent {p : X × Y → ℝ} (hp : stoch_to_det.IsPMF p)
-    (V : stoch_to_det.Latent p) :
-    NaturalLatents.HasStochasticNL (measureOfPMF hp)
-      (ENNReal.ofReal (V.score * Real.log 2)) := by
-  classical
-  set n := Fintype.card V.ι with hn
-  let e : V.ι ≃ Fin n := Fintype.equivFin V.ι
-  let E : V.ι × (X × Y) ≃ Fin n × (X × Y) := e.prodCongr (Equiv.refl (X × Y))
-  let q : Fin n × (X × Y) → ℝ := fun w => V.joint (E.symm w)
-  have hq : stoch_to_det.IsPMF q := by
-    refine ⟨fun w => V.joint_isPMF.nonneg _, ?_⟩
-    rw [stoch_to_det.mass, ← Equiv.sum_comp E q]
-    simpa [q, stoch_to_det.mass] using V.joint_isPMF.total
-  have hq2 : ∀ i : Fintype (Fin n × (X × Y)), @stoch_to_det.IsPMF _ i q :=
-    fun i => isPMF_cast _ i hq
-  -- the three conditional mutual informations making up the score
-  have hjoint : ∀ i : Fintype (V.ι × (X × Y)), @stoch_to_det.IsPMF _ i V.joint :=
-    fun i => isPMF_cast _ i V.joint_isPMF
-  have hscore : V.score =
-      stoch_to_det.condMI (fun w : V.ι × X × Y => w.2.1) (fun w => w.2.2) (fun w => w.1) V.joint +
-      stoch_to_det.condMI (fun w : V.ι × X × Y => w.1) (fun w => w.2.1) (fun w => w.2.2) V.joint +
-      stoch_to_det.condMI (fun w : V.ι × X × Y => w.1) (fun w => w.2.2) (fun w => w.2.1) V.joint :=
-    rfl
-  have hlog : (0 : ℝ) < Real.log 2 := Real.log_pos (by norm_num)
-  have hn1 : 0 ≤ stoch_to_det.condMI (fun w : V.ι × X × Y => w.2.1) (fun w => w.2.2)
-      (fun w => w.1) V.joint := stoch_to_det.condMI_nonneg (hjoint _) _ _ _
-  have hn2 : 0 ≤ stoch_to_det.condMI (fun w : V.ι × X × Y => w.1) (fun w => w.2.1)
-      (fun w => w.2.2) V.joint := stoch_to_det.condMI_nonneg (hjoint _) _ _ _
-  have hn3 : 0 ≤ stoch_to_det.condMI (fun w : V.ι × X × Y => w.1) (fun w => w.2.2)
-      (fun w => w.2.1) V.joint := stoch_to_det.condMI_nonneg (hjoint _) _ _ _
-  refine ⟨n, measureOfPMF (hq2 _), ⟨?_, ?_, ?_⟩, ?_⟩
-  -- fork condition: `I(X ; Y ∣ V)`
-  · rw [forkApproxError_eq_ofReal, pmfOfMeasure_measureOfPMF]
-    convert_to ENNReal.ofReal (V.score * Real.log 2) ≥
-      ENNReal.ofReal (stoch_to_det.condMI (fun w : Fin n × X × Y => w.2.1) (fun w => w.2.2)
-        (fun w => w.1) q * Real.log 2)
-    · congr!
-    have hk : stoch_to_det.condMI (fun w : Fin n × X × Y => w.2.1) (fun w => w.2.2)
-        (fun w => w.1) q =
-        stoch_to_det.condMI (fun w : V.ι × X × Y => w.2.1) (fun w => w.2.2) (fun w => w.1)
-          V.joint := by
-      rw [show q = fun w => V.joint (E.symm w) from rfl, condMI_reindex E V.joint]
-      exact condMI_equiv₃ (hjoint _) _ _ _ e
-    rw [ge_iff_le, hk, hscore]
-    exact ENNReal.ofReal_le_ofReal (by nlinarith)
-  -- chain condition `Y → X → V`: `I(V ; Y ∣ X)`
-  · let ψ : V.ι × (X × Y) ≃ Y × X × Fin n :=
-      { toFun := fun u => (u.2.2, u.2.1, e u.1)
-        invFun := fun z => (e.symm z.2.2, z.2.1, z.1)
-        left_inv := by intro u; simp only [Equiv.symm_apply_apply, Prod.mk.eta]
-        right_inv := by intro z; simp only [Equiv.apply_symm_apply, Prod.mk.eta] }
-    have hR : pmfOfMeasure (swapACProb (measureOfPMF (hq2 _))) =
-        fun z : Y × X × Fin n => V.joint (ψ.symm z) := by
-      funext z
-      obtain ⟨y, x, l⟩ := z
-      rw [pmfOfMeasure, swapACProb_singleton (measureOfPMF (hq2 _)) (l, x, y),
-        measureOfPMF_singleton, ENNReal.toReal_ofReal (hq.nonneg _)]
-      simp [ψ, q, E]
-    rw [chainApproxError_eq_ofReal, hR]
-    convert_to ENNReal.ofReal (V.score * Real.log 2) ≥
-      ENNReal.ofReal (stoch_to_det.condMI (fun w : Y × X × Fin n => w.1) (fun w => w.2.2)
-        (fun w => w.2.1) (fun z => V.joint (ψ.symm z)) * Real.log 2)
-    · congr!
-    have hk : stoch_to_det.condMI (fun w : Y × X × Fin n => w.1) (fun w => w.2.2)
-        (fun w => w.2.1) (fun z => V.joint (ψ.symm z)) =
-        stoch_to_det.condMI (fun w : V.ι × X × Y => w.1) (fun w => w.2.2) (fun w => w.2.1)
-          V.joint := by
-      rw [condMI_reindex ψ V.joint]
-      simp only [ψ, Equiv.coe_fn_mk]
-      exact (condMI_equiv₂ (hjoint _) (fun u : V.ι × X × Y => u.2.2) (fun u => u.1)
-        (fun u => u.2.1) e).trans (condMI_comm (hjoint _) _ _ _)
-    rw [ge_iff_le, hk, hscore]
-    exact ENNReal.ofReal_le_ofReal (by nlinarith)
-  -- chain condition `X → Y → V`: `I(V ; X ∣ Y)`
-  · let φ : V.ι × (X × Y) ≃ X × Y × Fin n :=
-      { toFun := fun u => (u.2.1, u.2.2, e u.1)
-        invFun := fun z => (e.symm z.2.2, z.1, z.2.1)
-        left_inv := by intro u; simp only [Equiv.symm_apply_apply, Prod.mk.eta]
-        right_inv := by intro z; simp only [Equiv.apply_symm_apply, Prod.mk.eta] }
-    have hS : pmfOfMeasure (swapABProb (swapACProb (measureOfPMF (hq2 _)))) =
-        fun z : X × Y × Fin n => V.joint (φ.symm z) := by
-      funext z
-      obtain ⟨x, y, l⟩ := z
-      have h1 := swapABProb_singleton (swapACProb (measureOfPMF (hq2 _))) (y, x, l)
-      simp only [swapAB] at h1
-      rw [pmfOfMeasure, h1, swapACProb_singleton (measureOfPMF (hq2 _)) (l, x, y),
-        measureOfPMF_singleton, ENNReal.toReal_ofReal (hq.nonneg _)]
-      simp [φ, q, E]
-    rw [chainApproxError_eq_ofReal, hS]
-    convert_to ENNReal.ofReal (V.score * Real.log 2) ≥
-      ENNReal.ofReal (stoch_to_det.condMI (fun w : X × Y × Fin n => w.1) (fun w => w.2.2)
-        (fun w => w.2.1) (fun z => V.joint (φ.symm z)) * Real.log 2)
-    · congr!
-    have hk : stoch_to_det.condMI (fun w : X × Y × Fin n => w.1) (fun w => w.2.2)
-        (fun w => w.2.1) (fun z => V.joint (φ.symm z)) =
-        stoch_to_det.condMI (fun w : V.ι × X × Y => w.1) (fun w => w.2.1) (fun w => w.2.2)
-          V.joint := by
-      rw [condMI_reindex φ V.joint]
-      simp only [φ, Equiv.coe_fn_mk]
-      exact (condMI_equiv₂ (hjoint _) (fun u : V.ι × X × Y => u.2.1) (fun u => u.1)
-        (fun u => u.2.2) e).trans (condMI_comm (hjoint _) _ _ _)
-    rw [ge_iff_le, hk, hscore]
-    exact ENNReal.ofReal_le_ofReal (by nlinarith)
-  -- the `(X, Y)`-marginal of the transported joint law is `p`
-  · apply ProbabilityMeasure.toMeasure_injective
-    refine MeasureTheory.Measure.ext_of_singleton fun z => ?_
-    have hset : (Prod.snd ⁻¹' ({z} : Set (X × Y)) : Set (Fin n × X × Y)) =
-        ↑((Finset.univ : Finset (Fin n)).image (fun l => (l, z))) := by
-      ext w; simp [Prod.ext_iff, eq_comm]
-    have h1 : (getBCProb (measureOfPMF (hq2 _))).toMeasure {z} =
-        ∑ l : Fin n, ENNReal.ofReal (q (l, z)) := by
-      change ((measureOfPMF (hq2 _)).toMeasure.snd) {z} = _
-      rw [MeasureTheory.Measure.snd_apply (measurableSet_singleton z), hset,
-        ← MeasureTheory.sum_measure_singleton,
-        Finset.sum_image (by intro a _ b _ h; simpa using h)]
-      exact Finset.sum_congr rfl fun l _ => measureOfPMF_singleton _ _
-    rw [h1, measureOfPMF_singleton hp z,
-      ← ENNReal.ofReal_sum_of_nonneg (fun l _ => hq.nonneg _)]
-    congr 1
-    rw [← V.mixture z, ← Equiv.sum_comp e (fun l => q (l, z))]
-    exact Finset.sum_congr rfl fun u _ => by simp [q, E, stoch_to_det.Latent.joint]
 
 /-- §6. Converse: a `HasStochasticNL ε` witness produces a `Latent p` with
 `score ≤ 3 * natsToBits ε` — the factor `3` because `HasStochasticNL` bounds

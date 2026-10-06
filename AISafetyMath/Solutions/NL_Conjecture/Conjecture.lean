@@ -1,10 +1,13 @@
+module
 
-import AISafetyMath.Solutions.NL_Conjecture.Latents
+public import AISafetyMath.Solutions.NL_Conjecture.Latents
 
-/-
+/-!
 The main conjecture statement, `MainConjecture`. Proved as
 `NaturalLatents.conjecture_solution` in `Bridge.lean`.
 -/
+
+@[expose] public section
 
 namespace NaturalLatents
 

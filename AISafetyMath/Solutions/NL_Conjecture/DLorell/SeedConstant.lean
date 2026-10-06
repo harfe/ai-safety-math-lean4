@@ -1,4 +1,5 @@
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Cone
+module
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Cone
 
 /-!
 # §11. The seed-two-replica constant
@@ -28,6 +29,8 @@ single-replica form `H(A ∣ ε,L₀) ≤ C₀[M + b_Z]`, recorded below as
 `I(L₁;Z ∣ L₀) ≤ I(L₁,L₂;Z ∣ L₀)`. The single form yields the final constant
 `6C₀+3` rather than `108C₀+3`; see `stoch_to_det.Main.T_le_Cstar_sharpest`.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 

@@ -1,7 +1,8 @@
-import Mathlib.Analysis.SpecialFunctions.Log.Base
-import Mathlib.NumberTheory.Harmonic.EulerMascheroni
-import Mathlib.Tactic.NormNum
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Prelude
+module
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
+public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
+public import Mathlib.Tactic.NormNum
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Prelude
 
 /-!
 # The constants ledger
@@ -25,10 +26,10 @@ That is **not enough** for the advertised decimal:
 | `γ > 0.5770052` (needed)  | `< 4.83 × 10¹⁶` (advertised) |
 | true `γ = 0.5772156649…`  | `= 4.82970973874682 × 10¹⁶` |
 
-So `Cstar_lt_advertised` below needs `γ > 0.5770052` — roughly four decimal
-places. Mathlib's `Real.eulerMascheroniSeq_lt_eulerMascheroniConstant n` gives
-increasing rational lower bounds with error `Θ(1/n)`, so `n ≈ 2300` brackets it.
-`Cstar_lt_weak` records what follows from the bounds Mathlib has today.
+The advertised `4.83 × 10¹⁶` would need `γ > 0.5770052` (via
+`Real.eulerMascheroniSeq_lt_eulerMascheroniConstant n` with `n ≈ 2300`, an expensive
+harmonic-number evaluation); it is not proved here, since no downstream result needs
+a decimal. `Cstar_lt_weak` records what follows from the bounds Mathlib has today.
 
 `κ < 3.610` is tighter still: it needs `γ > 0.5771802`
 against a true value of `0.5772157…`, a slack of `3.5 × 10⁻⁵`. §8 and §10 use
@@ -36,14 +37,14 @@ only the exact identity `κ · ln 2 = 1 + ln 8 − γ` (`kappa_mul_log_two`), an
 the ledger's `K_sc = κ/c_* = (1 + ln 8 − γ) N` is symbolic.
 -/
 
+@[expose] public section
+
 namespace stoch_to_det
 
 open Real
 
 /-- `N := 729 · 2²¹ · 17⁴ = 127 688 893 267 968`. -/
 def N : ℕ := 729 * 2 ^ 21 * 17 ^ 4
-
-lemma N_eq : N = 127688893267968 := by norm_num [N]
 
 /-- `δ_* := 27 / 2 000 000`. -/
 noncomputable def deltaStar : ℝ := 27 / 2000000
@@ -70,9 +71,6 @@ noncomputable def C0 : ℝ := Ksc + Korth + 1
 /-- `C⋆ := 108 C₀ + 3`, the constant of the Main Theorem. -/
 noncomputable def Cstar : ℝ := 108 * C0 + 3
 
-/-- `12 C₀ + 3`, the sharper constant of Remark 12.3(a). -/
-noncomputable def CstarSharp : ℝ := 12 * C0 + 3
-
 /-! ### Identities used by §§8-12 -/
 
 /-- `κ · ln 2 = 1 + ln 8 − γ`. This — not any decimal — is what §8 and §10
@@ -94,11 +92,6 @@ lemma one_div_cStar_mul_log_two : 1 / (cStar * Real.log 2) = Korth := by
   unfold cStar Korth
   have hlog : Real.log 2 ≠ 0 := Real.log_ne_zero.mpr (by norm_num)
   field_simp [hlog, N]
-
-/-- Closed form: `C₀ = (2 + ln 8 − γ) N + 1`. -/
-lemma C0_eq : C0 = (2 + Real.log 8 - eulerMascheroniConstant) * N + 1 := by
-  unfold C0 Ksc Korth
-  ring
 
 /-! ### Positivity -/
 
@@ -130,70 +123,5 @@ lemma Cstar_pos : 0 < Cstar := by
 /-! ### Decimal bounds
 
 `stoch_to_det.Main` is stated with `Cstar`, not with a decimal. -/
-
-/-- The bound available from Mathlib's current `1/2 < γ`. -/
-theorem Cstar_lt_weak : Cstar < 4.94e16 := by
-  have hlog8 : Real.log 8 = 3 * Real.log 2 := by
-    calc
-      Real.log 8 = Real.log ((2 : ℝ) ^ 3) := by norm_num
-      _ = 3 * Real.log 2 := Real.log_pow _ _
-  have hgamma := Real.one_half_lt_eulerMascheroniConstant
-  have hlog2 := Real.log_two_lt_d9
-  rw [Cstar, C0_eq, hlog8]
-  norm_num [N] at hgamma hlog2 ⊢
-  nlinarith
-
-section
-
-set_option maxRecDepth 10000
-
-/-- The advertised bound. **Needs
-`γ > 0.5770052`** — see the module docstring; not provable from Mathlib's
-`one_half_lt_eulerMascheroniConstant` alone. -/
-theorem Cstar_lt_advertised : Cstar < 4.83e16 := by
-  have hlog8 : Real.log 8 = 3 * Real.log 2 := by
-    calc
-      Real.log 8 = Real.log ((2 : ℝ) ^ 3) := by norm_num
-      _ = 3 * Real.log 2 := Real.log_pow _ _
-  have hlog2500 : Real.log 2500 = 2 * Real.log 2 + 4 * Real.log 5 := by
-    calc
-      Real.log 2500 = Real.log (((2 : ℝ) ^ 2) * ((5 : ℝ) ^ 4)) := by norm_num
-      _ = Real.log ((2 : ℝ) ^ 2) + Real.log ((5 : ℝ) ^ 4) :=
-        Real.log_mul (by norm_num) (by norm_num)
-      _ = 2 * Real.log 2 + 4 * Real.log 5 := by
-        rw [Real.log_pow, Real.log_pow]
-        norm_num only [Nat.cast_ofNat]
-  have hgamma := Real.eulerMascheroniSeq_lt_eulerMascheroniConstant 2499
-  have hlog2 := Real.log_two_lt_d9
-  have hlog5 := Real.log_five_lt_d9
-  rw [Real.eulerMascheroniSeq] at hgamma
-  norm_num only [Nat.cast_ofNat] at hgamma
-  rw [hlog2500] at hgamma
-  rw [Cstar, C0_eq, hlog8]
-  set_option maxRecDepth 10000 in
-    norm_num [harmonic, N] at hgamma hlog2 hlog5 ⊢
-  nlinarith
-
-end
-
-/-- Remark 12.3(a)'s advertised bound. Same `γ`
-precision caveat. -/
-theorem CstarSharp_lt_advertised : CstarSharp < 5.37e15 := by
-  have hlog8 : Real.log 8 = 3 * Real.log 2 := by
-    calc
-      Real.log 8 = Real.log ((2 : ℝ) ^ 3) := by norm_num
-      _ = 3 * Real.log 2 := Real.log_pow _ _
-  have hlog256 : Real.log 256 = 8 * Real.log 2 := by
-    calc
-      Real.log 256 = Real.log ((2 : ℝ) ^ 8) := by norm_num
-      _ = 8 * Real.log 2 := Real.log_pow _ _
-  have hgamma := Real.eulerMascheroniSeq_lt_eulerMascheroniConstant 255
-  have hlog2 := Real.log_two_lt_d9
-  rw [Real.eulerMascheroniSeq] at hgamma
-  norm_num only [Nat.cast_ofNat] at hgamma
-  rw [hlog256] at hgamma
-  rw [CstarSharp, C0_eq, hlog8]
-  norm_num [harmonic, N] at hgamma hlog2 ⊢
-  nlinarith
 
 end stoch_to_det

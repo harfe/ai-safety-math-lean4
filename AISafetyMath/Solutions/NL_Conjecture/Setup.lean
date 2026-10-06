@@ -1,26 +1,20 @@
+module
 
-import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
-import Mathlib.Data.Fintype.EquivFin
-import Mathlib.InformationTheory.KullbackLeibler.Basic
-import Mathlib.MeasureTheory.MeasurableSpace.Defs
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Probability.ProbabilityMassFunction.Basic
-import Mathlib.Probability.ProbabilityMassFunction.Constructions
+public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
+public import Mathlib.Data.Fintype.EquivFin
+public import Mathlib.InformationTheory.KullbackLeibler.Basic
+public import Mathlib.MeasureTheory.MeasurableSpace.Defs
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Probability.ProbabilityMassFunction.Basic
+public import Mathlib.Probability.ProbabilityMassFunction.Constructions
 
-/-
+/-!
 Setup for `AISafetyMath.Solutions.NL_Conjecture`: fork/chain densities, natural-latent
 and deterministic-latent predicates on `A × B × C`, and the core mathematical content
 of `conjecture_exact_case` (`conjecture_exact_case_aux`).
-
-Most of the mathematical content (in particular the whole proof of
-`conjecture_exact_case_aux`) is adapted from the scratch file `AISafetyMath.prob_5`,
-which developed the same fork/chain/natural-latent machinery under
-`[Fintype _]` typeclasses. Here we port it to the `[Finite _]` +
-`[MeasurableSpace _] [DiscreteMeasurableSpace _]` typeclass discipline used by
-the target file, by locally deriving `Fintype` instances from `Finite` via
-`Fintype.ofFinite` (as `local instance`s), so that the `Finset.sum`-based
-proofs from `prob_5` carry over essentially verbatim.
 -/
+
+@[expose] public section
 
 namespace NaturalLatents
 
@@ -34,8 +28,7 @@ variable [MeasurableSpace A] [DiscreteMeasurableSpace A]
 variable [MeasurableSpace B] [DiscreteMeasurableSpace B]
 variable [MeasurableSpace C] [DiscreteMeasurableSpace C]
 
-/-- Locally upgrade `Finite` to `Fintype`, so that the `Finset.sum`-based
-development from `prob_5` applies without further changes. -/
+/-- Locally upgrade `Finite` to `Fintype`. -/
 noncomputable local instance instFintypeA : Fintype A := Fintype.ofFinite A
 noncomputable local instance instFintypeB : Fintype B := Fintype.ofFinite B
 noncomputable local instance instFintypeC : Fintype C := Fintype.ofFinite C
@@ -122,7 +115,7 @@ lemma forkDensity_sum_1 (P : ProbabilityMeasure (A × B × C)) : HasSum (forkDen
 
 Kept behind an `abbrev` so that `forkDistr` itself can be a thin wrapper; see the
 note on heights there. -/
-private noncomputable abbrev forkChoice (P : ProbabilityMeasure (A × B × C)) :
+noncomputable abbrev forkChoice (P : ProbabilityMeasure (A × B × C)) :
     ProbabilityMeasure (A × B × C) :=
   letI : Decidable (∃ μ : ProbabilityMeasure (A × B × C),
       ∀ x, μ.toMeasure {x} = forkDensity P.toMeasure x) := Classical.propDecidable _
@@ -152,9 +145,7 @@ its own signature in it and brings the height back to 14, matching the target. H
 only steer the elaborator's unfolding order and are irrelevant to the kernel, so none of
 this changes what is proved.
 
-See `AISafetyMath/Targets/HeightLeak.lean` for a minimal reproduction of the comparator
-behaviour, and `comparator-issue-draft.md` for the upstream fix that would make this
-wrapper unnecessary. -/
+-/
 noncomputable
 def forkDistr (P : ProbabilityMeasure (A × B × C)) : ProbabilityMeasure (A × B × C) :=
   forkChoice P
@@ -187,11 +178,11 @@ def swapBC : (A × B × C) → (A × C × B) := fun x => (x.1,x.2.2,x.2.1)
 
 noncomputable
 def swapABProb (P : ProbabilityMeasure (A × B × C)) : ProbabilityMeasure (B × A × C)
-  := @ProbabilityMeasure.map _ _ _ _ P swapAB (AEMeasurable.of_discrete)
+  := ProbabilityMeasure.map P swapAB
 
 noncomputable
 def swapBCProb (P : ProbabilityMeasure (A × B × C)) : ProbabilityMeasure (A × C × B)
-  := @ProbabilityMeasure.map _ _ _ _ P swapBC (AEMeasurable.of_discrete)
+  := ProbabilityMeasure.map P swapBC
 
 noncomputable
 def swapACProb (P : ProbabilityMeasure (A × B × C)) : ProbabilityMeasure (C × B × A) :=
@@ -340,7 +331,7 @@ lemma chainDensity_sum_1 (P : ProbabilityMeasure (A × B × C)) :
 
 /-- The chain distribution, defined by its specification; kept behind an `abbrev` for
 the same reason as `forkChoice`. -/
-private noncomputable abbrev chainChoice (P : ProbabilityMeasure (A × B × C)) :
+noncomputable abbrev chainChoice (P : ProbabilityMeasure (A × B × C)) :
     ProbabilityMeasure (A × B × C) :=
   letI : Decidable (∃ μ : ProbabilityMeasure (A × B × C),
       ∀ x, μ.toMeasure {x} = chainDensity P.toMeasure x) := Classical.propDecidable _
@@ -975,8 +966,7 @@ lemma classRep_congr (Q : ProbabilityMeasure (A × B × C)) {b b' : B}
 `(b, c) ↦ (classRep Q b, b, c)`, so the latent value is the posterior class of `b`. -/
 noncomputable def detLatent_distr (Q : ProbabilityMeasure (A × B × C)) :
     ProbabilityMeasure (B × B × C) :=
-  @ProbabilityMeasure.map _ _ _ _ (getBCProb Q)
-    (fun x => (classRep Q x.1, x.1, x.2)) AEMeasurable.of_discrete
+  ProbabilityMeasure.map (getBCProb Q) (fun x => (classRep Q x.1, x.1, x.2))
 
 omit [DiscreteMeasurableSpace A] in
 /-- `Measure.map_apply` for `detLatent_distr`. -/
@@ -1235,7 +1225,7 @@ noncomputable local instance instFintypeA' : Fintype A' := Fintype.ofFinite A'
 /-- Relabel the first (latent) coordinate along an equivalence `e : A ≃ A'`. -/
 noncomputable def relabelA (e : A ≃ A') (Q : ProbabilityMeasure (A × B × C)) :
     ProbabilityMeasure (A' × B × C) :=
-  @ProbabilityMeasure.map _ _ _ _ Q (fun x => (e x.1, x.2)) AEMeasurable.of_discrete
+  ProbabilityMeasure.map Q (fun x => (e x.1, x.2))
 
 lemma relabelA_apply (e : A ≃ A') (Q : ProbabilityMeasure (A × B × C)) (s : Set (A' × B × C)) :
     (relabelA e Q).1 s = Q.1 {x | (e x.1, x.2) ∈ s} :=
@@ -1269,16 +1259,6 @@ lemma relabelA_massAC (e : A ≃ A') (Q : ProbabilityMeasure (A × B × C)) (a :
   ext y
   simp [e.apply_eq_iff_eq]
 
-lemma relabelA_massB (e : A ≃ A') (Q : ProbabilityMeasure (A × B × C)) (b : B) :
-    massB (relabelA e Q) b = massB Q b := by
-  rw [massB, relabelA_apply, massB]
-  rfl
-
-lemma relabelA_massC (e : A ≃ A') (Q : ProbabilityMeasure (A × B × C)) (c : C) :
-    massC (relabelA e Q) c = massC Q c := by
-  rw [massC, relabelA_apply, massC]
-  rfl
-
 lemma relabelA_massBC (e : A ≃ A') (Q : ProbabilityMeasure (A × B × C)) (b : B) (c : C) :
     massBC (relabelA e Q) b c = massBC Q b c := by
   rw [massBC, relabelA_apply, massBC]
@@ -1309,7 +1289,7 @@ pair marginals. -/
 /-- Relabel the first coordinate of a measure on a pair. -/
 noncomputable def relabelFst (e : A ≃ A') (P : ProbabilityMeasure (A × B)) :
     ProbabilityMeasure (A' × B) :=
-  @ProbabilityMeasure.map _ _ _ _ P (fun x => (e x.1, x.2)) AEMeasurable.of_discrete
+  ProbabilityMeasure.map P (fun x => (e x.1, x.2))
 
 lemma relabelFst_apply (e : A ≃ A') (P : ProbabilityMeasure (A × B)) (s : Set (A' × B)) :
     (relabelFst e P).1 s = P.1 {x | (e x.1, x.2) ∈ s} :=

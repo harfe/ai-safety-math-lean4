@@ -1,4 +1,5 @@
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Scalar
+module
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Scalar
 
 /-!
 # §10. The cone bound
@@ -34,6 +35,8 @@ The analytic content is `shifted_exp_klDiv` and the elementary integral
 continuous `U`, so its definition depends on the modelling question described
 in `stoch_to_det.Quotient`.
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -131,7 +134,7 @@ theorem shifted_exp_klDiv {a : ℝ} (ha : 0 ≤ a) :
   let : IsProbabilityMeasure
       (c • (expMeasure 1).restrict (Set.Ioi a)) := by
     rw [← hmap]
-    exact Measure.isProbabilityMeasure_map (by fun_prop)
+    exact ((Measure.isProbabilityMeasure_map_iff (by fun_prop)).2 inferInstance)
   rw [hmap, klDiv_smul_restrict (expMeasure 1) (Set.Ioi a) measurableSet_Ioi c]
   simp [c, Real.coe_toNNReal _ (Real.exp_nonneg a)]
 

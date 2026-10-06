@@ -1,9 +1,10 @@
-import Mathlib.Analysis.MeanInequalities
-import Mathlib.Analysis.Calculus.DerivativeTest
-import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.Tactic.Linarith
-import AISafetyMath.Solutions.NL_Conjecture.DLorell.Entropy
+module
+public import Mathlib.Analysis.MeanInequalities
+public import Mathlib.Analysis.Calculus.DerivativeTest
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.Tactic.Linarith
+public import AISafetyMath.Solutions.NL_Conjecture.DLorell.Entropy
 
 /-!
 # Lemma 0.1 — the classical toolkit
@@ -25,6 +26,8 @@ All four proofs are included below.
 real random variable given by a Lebesgue density, which is exactly how §8 uses
 it (`X + N` with `N = ln T`, `T ~ Exp(1)`).
 -/
+
+@[expose] public section
 
 namespace stoch_to_det
 
@@ -81,84 +84,6 @@ private lemma KL_nonneg {P Q : ω → ℝ} (hP : IsPMF P) (hQ : IsPMF Q)
   simp_rw [← mul_div_assoc]
   rw [← sum_div]
   exact div_nonneg hnats (Real.log_pos (by norm_num)).le
-
-omit [DecidableEq ω] in
-/-- **(T1)** variational inequality:
-`E_r h − lg E_Q 2^h ≤ D(r ‖ Q)`. -/
-theorem variational_le {r Q : ω → ℝ} (hr : IsPMF r) (hQ : IsPMF Q) (hac : AbsCont r Q)
-    (h : ω → ℝ) :
-    (∑ a, r a * h a) - lg (∑ a, Q a * (2 : ℝ) ^ h a) ≤ KL r Q := by
-  let Z : ℝ := ∑ a, Q a * (2 : ℝ) ^ h a
-  let S : ω → ℝ := fun a ↦ Q a * (2 : ℝ) ^ h a / Z
-  obtain ⟨a₀, ha₀⟩ : ∃ a, 0 < Q a := by
-    have hsum : 0 < ∑ a, Q a := by
-      rw [← mass, hQ.total]
-      norm_num
-    rcases (Finset.sum_pos_iff_of_nonneg (fun a _ ↦ hQ.nonneg a)).mp hsum with
-      ⟨a, _, ha⟩
-    exact ⟨a, ha⟩
-  have hZ : 0 < Z := by
-    apply Finset.sum_pos'
-    · intro a _
-      exact mul_nonneg (hQ.nonneg a) (by positivity)
-    · exact ⟨a₀, Finset.mem_univ _, mul_pos ha₀ (by positivity)⟩
-  have hS : IsPMF S := by
-    constructor
-    · intro a
-      dsimp [S]
-      exact div_nonneg (mul_nonneg (hQ.nonneg a) (by positivity)) hZ.le
-    · dsimp [mass, S]
-      rw [← sum_div]
-      exact div_self hZ.ne'
-  have hacS : AbsCont r S := by
-    intro a hSa
-    apply hac a
-    have hnum : Q a * (2 : ℝ) ^ h a = 0 := by
-      dsimp [S] at hSa
-      exact (div_eq_zero_iff).mp hSa |>.resolve_right hZ.ne'
-    exact (mul_eq_zero.mp hnum).resolve_right (by positivity)
-  have hnonneg : 0 ≤ KL r S := KL_nonneg hr hS hacS
-  have hterm : ∀ a : ω,
-      r a * lg (r a / S a) =
-        r a * lg (r a / Q a) - r a * h a + r a * lg Z := by
-    intro a
-    by_cases hra : r a = 0
-    · simp [hra]
-    · have hra_pos : 0 < r a := lt_of_le_of_ne (hr.nonneg a) (Ne.symm hra)
-      have hQa : Q a ≠ 0 := fun hQ0 ↦ hra (hac a hQ0)
-      have hQa_pos : 0 < Q a := lt_of_le_of_ne (hQ.nonneg a) (Ne.symm hQa)
-      have hpw : (2 : ℝ) ^ h a ≠ 0 := (by positivity)
-      have hSa_pos : 0 < S a := by
-        dsimp [S]
-        positivity
-      change r a * (Real.log (r a / S a) / Real.log 2) =
-        r a * (Real.log (r a / Q a) / Real.log 2) - r a * h a +
-          r a * (Real.log Z / Real.log 2)
-      rw [Real.log_div hra hSa_pos.ne', Real.log_div hra hQa,
-        show Real.log (S a) = Real.log (Q a) + h a * Real.log 2 - Real.log Z by
-          dsimp [S]
-          rw [Real.log_div (mul_ne_zero hQa hpw) hZ.ne', Real.log_mul hQa hpw,
-            Real.log_rpow (by norm_num : (0 : ℝ) < 2)]]
-      field_simp [Real.log_ne_zero_of_pos_of_ne_one (by norm_num : (0 : ℝ) < 2)
-        (by norm_num : (2 : ℝ) ≠ 1)]
-      ring
-  have hid : KL r S = KL r Q - (∑ a, r a * h a) + lg Z := by
-    rw [KL, KL]
-    calc
-      (∑ a, r a * lg (r a / S a)) =
-          ∑ a, (r a * lg (r a / Q a) - r a * h a + r a * lg Z) := by
-            apply sum_congr rfl
-            intro a _
-            exact hterm a
-      _ = (∑ a, r a * lg (r a / Q a)) - (∑ a, r a * h a) +
-          (∑ a, r a) * lg Z := by
-            rw [sum_add_distrib, sum_sub_distrib, ← sum_mul]
-      _ = (∑ a, r a * lg (r a / Q a)) - (∑ a, r a * h a) + lg Z := by
-            have hsumr : ∑ a, r a = 1 := by simpa [mass] using hr.total
-            rw [hsumr, one_mul]
-  change (∑ a, r a * h a) - lg Z ≤ KL r Q
-  rw [hid] at hnonneg
-  linarith
 
 /-- The two-point Pinsker inequality in nats, in the orientation used by the
 `{P > Q}` partition. -/
