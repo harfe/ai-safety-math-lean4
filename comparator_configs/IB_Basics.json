@@ -4,13 +4,23 @@
     "theorem_names": [
       "IB.convergence_iff_weak", 
       "IB.probConvex_iff",
-      "IB.infraKernelOfEnvironments_continuous"
+      "IB.Credal.dist_is_hausdorff",
+      "IB.Credal.ok_closedConvexHull",
+      "IB.ok_destinyMetric",
+      "IB.infraKernel_singleton",
+      "IB.continuous_of_CCL",
+      "IB.exp_well_defined_of_measurable_bounded",
+      "IB.exp_values_bddAbove_of_bddAbove",
+      "IB.expIB_has_max",
+      "IB.expIB_continuous_in_credal",
+      "IB.expCCL_mem_unitInterval",
+      "IB.infraRegret_mem_unitInterval",
+      "IB.continuous_expCCL",
+      "IB.exists_ib_optimal_policy",
+      "IB.ib_optimal_learns_class"
     ],
     "definition_names": [
-      "IB.Credal.probConvex_sInter",
-      "IB.Credal.probConvexHull_nonempty",
-      "IB.Credal.probConvexHull_convex",
-      "IB.Credal.probConvex_closure"
+      "IB.Credal.closedConvexHull"
     ],
     "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
     "enable_nanoda": false

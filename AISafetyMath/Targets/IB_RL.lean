@@ -1,8 +1,9 @@
-import Mathlib
+module
+public import Mathlib
 
 set_option linter.style.header false
 
-/-!
+/-
 This file formalizes the definitions and propositions in
 Articles/IB_RL.md
 
@@ -11,7 +12,7 @@ The main results are `exists_optimal_policy` and `bayes_optimal_learns_class`.
 It also includes some additional sanity check lemmas.
 -/
 
-
+@[expose] public section
 
 namespace IB_RL
 
@@ -78,11 +79,16 @@ lemma totalLoss_summable (L : MomentaryLoss A O) (γ : discount)
   sorry
 
 
-/-- sanity check: totalLoss of constant c is c.
+/-- sanity check: `totalLoss` of a constant `c` is `c`.
 Verifies normalization property.
 -/
 lemma totalLoss_constant (c : unitInterval) (γ : discount)
     (h : Destiny A O) : totalLoss (fun _ => c) γ h = c := by
+  sorry
+
+/-- sanity check: `totalLoss` is has values in `unitInterval`. -/
+lemma totalLoss_mem_unitInterval (L : MomentaryLoss A O) (γ : discount)
+    (h : Destiny A O) : totalLoss L γ h ∈ unitInterval := by
   sorry
 
 
@@ -164,7 +170,7 @@ def trajectoryProbMeasure (π : Policy A O)
     (μ : Environment A O) : ProbabilityMeasure (Destiny A O) :=
   ⟨trajectoryMeasure π μ, Kernel.instIsProbabilityMeasureForallTrajMeasure⟩
 
-/-- sanity check: trajectoryMeasure does the correct thing
+/-- sanity check: `trajectoryMeasure` does the correct thing
 on all cylinder sets.
 `List.take n` returns the first `n` elements as a new list.
 `List.get t` returns element `t` of the list.
@@ -177,6 +183,17 @@ lemma trajectoryMeasure_cylinder (π : Policy A O) (μ : Environment A O)
     μ (h.take t.1) (h.get t).1 {(h.get t).2} := by
   sorry
 
+/-- sanity check: `trajectoryMeasure` is uniquely characterized
+by the equation in `trajectoryMeasure_cylinder`.
+-/
+lemma trajectoryMeasure_unique (π : Policy A O) (μ : Environment A O)
+    (m2 : Measure (Destiny A O))
+    (hm2 : ∀ (h : History A O), m2 {d | initialSegment A O d h.length = h}
+      = ∏ (t : Fin h.length),
+      π (h.take t.1) {(h.get t).1} *
+      μ (h.take t.1) (h.get t).1 {(h.get t).2}) :
+    m2 = trajectoryMeasure π μ := by
+  sorry
 
 /-- Define the expected total loss.
 We will use the integral notation for the expectation wrt a probability measure.
@@ -249,9 +266,9 @@ theorem exists_optimal_policy (L : MomentaryLoss A O) (γ : discount) (μ : Envi
 
 
 /-- Definition of the regret of a Policy.
-Here, ⨅ is notation for the indexed infimum.
+Here, `⨅` is notation for the indexed infimum.
 We use EReal because it is a CompleteLattice,
-and the infimum works without default values there.
+and the infimum works without junk values there.
 -/
 noncomputable
 def regret (L : MomentaryLoss A O) (γ : discount)
@@ -285,7 +302,7 @@ the regret goes to zero as `γ` approaches `1` from below.
 On the `discount` set,
 we can use `Filter.atTop` to describe that `γ` approaches `1` from below.
 The class of environments is indexed by an index type `I`. -/
-def LearnsEnvClass (L : MomentaryLoss A O) (I : Type*) (μ_fam : I → Environment A O)
+def LearnsEnvClass (L : MomentaryLoss A O) {I : Type*} (μ_fam : I → Environment A O)
       (π_fam : discount → Policy A O) : Prop :=
     ∀ (i : I), Filter.Tendsto
     (fun (γ : discount) => regret L γ (π_fam γ) (μ_fam i)) Filter.atTop (nhds 0)
@@ -305,8 +322,8 @@ lemma discount_atTop_neBot : (Filter.atTop : Filter discount).NeBot := by
 /-- A class of environments is non-anytime learnable
 if it can be learned by a family of policies. -/
 def NonAnytimeLearnable (L : MomentaryLoss A O)
-      (I : Type*) (μ_fam : I → Environment A O) : Prop :=
-    ∃ π_fam, LearnsEnvClass L I μ_fam π_fam
+    {I : Type*} (μ_fam : I → Environment A O) : Prop :=
+  ∃ π_fam, LearnsEnvClass L μ_fam π_fam
 
 
 /-- The article talks about a prior `ζ` over environments.
@@ -317,7 +334,7 @@ Again, the `∫` in mathlib returns 0 if the function is not integrable
 (or not measurable).
 See `bayes_integrand_integrable` below, which guarantees integrability
 under assumptions. -/
-def IsBayesOptimalPolicy (L : MomentaryLoss A O) (I : Type*)
+def IsBayesOptimalPolicy (L : MomentaryLoss A O) {I : Type*}
     (μ_fam : I → Environment A O)
     [MeasurableSpace I] [DiscreteMeasurableSpace I] (ζ : ProbabilityMeasure I)
     (γ : discount) : Policy A O → Prop :=
@@ -328,30 +345,47 @@ def IsBayesOptimalPolicy (L : MomentaryLoss A O) (I : Type*)
 
 /-- sanity check: The integral in `IsBayesOptimalPolicy` is well-defined. -/
 lemma bayes_integrand_integrable
-    (L : MomentaryLoss A O) (I : Type*) (μ_fam : I → Environment A O)
+    (L : MomentaryLoss A O) {I : Type*} (μ_fam : I → Environment A O)
     [MeasurableSpace I] [DiscreteMeasurableSpace I] (ζ : ProbabilityMeasure I)
     (γ : discount) (π : Policy A O) :
     Integrable (fun i => expectedTotalLoss L γ π (μ_fam i)) ζ.toMeasure := by
   sorry
 
+/-- Corollary: There exists a bayes-optimal policy. -/
+theorem exists_bayes_optimal_policy (L : MomentaryLoss A O) {I : Type*}
+    (μ_fam : I → Environment A O)
+    [MeasurableSpace I] [DiscreteMeasurableSpace I] (ζ : ProbabilityMeasure I)
+    (γ : discount) :
+    ∃ π, IsBayesOptimalPolicy L μ_fam ζ γ π := by
+  sorry
+
+
 /-- Definition: a non-dogmatic prior -/
-def NonDogmaticPrior (I : Type*)
+def NonDogmaticPrior {I : Type*}
     [MeasurableSpace I] [DiscreteMeasurableSpace I]
     (ζ : ProbabilityMeasure I) : Prop :=
   ∀ (i : I), ζ {i} ≠ 0
+
+/-- sanity check: countable already follows from ´NonDogmaticPrior´ -/
+lemma countable_of_nonDogmaticPrior {I : Type*}
+    [MeasurableSpace I] [DiscreteMeasurableSpace I]
+    (ζ : ProbabilityMeasure I)
+    (h_non_dog : NonDogmaticPrior ζ) : Countable I := by
+  sorry
+
 
 /-- Proposition 2:
 A bayes-optimal Policy learns an Environment class if the prior is non-dogmatic.
 We can leave out the assumption that `I` is countable, because it is already implied by
 `NonDogmaticPrior` and `DiscreteMeasurableSpace I`. -/
 theorem bayes_optimal_learns_class
-    (L : MomentaryLoss A O) (I : Type*) (μ_fam : I → Environment A O)
+    (L : MomentaryLoss A O) {I : Type*} (μ_fam : I → Environment A O)
     [MeasurableSpace I] [DiscreteMeasurableSpace I] (ζ : ProbabilityMeasure I)
-    (h_learnable : NonAnytimeLearnable L I μ_fam)
-    (h_non_dog : NonDogmaticPrior I ζ)
+    (h_learnable : NonAnytimeLearnable L μ_fam)
+    (h_non_dog : NonDogmaticPrior ζ)
     (π_fam : discount → Policy A O)
-    (h_bayes_optimal : ∀ γ, IsBayesOptimalPolicy L I μ_fam ζ γ (π_fam γ))
-    : LearnsEnvClass L I μ_fam π_fam := by
+    (h_bayes_optimal : ∀ γ, IsBayesOptimalPolicy L μ_fam ζ γ (π_fam γ))
+    : LearnsEnvClass L μ_fam π_fam := by
   sorry
 
 

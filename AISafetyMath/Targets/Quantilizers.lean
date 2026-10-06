@@ -1,8 +1,9 @@
-import Mathlib
+module
+public import Mathlib
 
 set_option linter.style.header false
 
-/-! 
+/-!
 This file formalizes the definitions and theorems in
 Articles/Quantilizers.md
 
@@ -12,13 +13,15 @@ The main results are
 It also includes some additional sanity check lemmas.
 -/
 
+@[expose] public section
+
 namespace Quantilizers
 
 open ProbabilityTheory MeasureTheory
 
 
 variable {A : Type*} -- actions
-variable [MeasurableSpace A] [DiscreteMeasurableSpace A] [Finite A]
+variable [MeasurableSpace A] 
 variable (U : A → unitInterval) -- utilities of actions
 variable (γ : ProbabilityMeasure A) -- a prior over actions
 
@@ -35,7 +38,6 @@ def IsSortedActionFun (f : unitInterval → A) : Prop :=
 
 
 
-
 /-- Definition hole:
 define a concrete sorted action function.
 Later in `ok_mySortedActionFun` confirm
@@ -44,9 +46,26 @@ Parameters `U` and `γ` re-declared,
 to make sure they become part of the type, as the body likely will depend on it
 -/
 noncomputable
-def mySortedActionFun (U : A → unitInterval) (γ : ProbabilityMeasure A) : unitInterval → A :=
+def mySortedActionFun
+    [DiscreteMeasurableSpace A] [Finite A] -- force dependency
+    (U : A → unitInterval) (γ : ProbabilityMeasure A) : unitInterval → A :=
   sorry
 
+/-- Definition hole:
+Define a quantilizer based on mySortedActionFun.
+Correctness is verified in `ok_quantilizer`.
+Parameters `U` and `γ` re-declared,
+to make sure they become part of the type, as the body likely will depend on it
+-/
+noncomputable
+def quantilizer
+  [DiscreteMeasurableSpace A] [Finite A] -- force dependency
+  (U : A → unitInterval) (γ : ProbabilityMeasure A)
+  (q : qSpace) : ProbabilityMeasure A := sorry
+
+
+-- from now on we assume that A is finite
+variable [DiscreteMeasurableSpace A] [Finite A]
 
 /-- check that `mySortedActionFun` is actually a sorted action function.
 -/
@@ -59,17 +78,6 @@ lemma ok_mySortedActionFun : IsSortedActionFun U γ (mySortedActionFun U γ) := 
 def topQ (q : qSpace) : Set unitInterval :=
   Set.Icc ⟨1 - q, ⟨sub_nonneg_of_le q.2.2, sub_le_self 1 (le_of_lt q.2.1)⟩⟩ 1
 
-
-
-/-- Definition hole:
-Define a quantilizer based on mySortedActionFun.
-Correctness is verified in `ok_quantilizer`.
-Parameters `U` and `γ` re-declared,
-to make sure they become part of the type, as the body likely will depend on it
--/
-noncomputable
-def quantilizer (U : A → unitInterval) (γ : ProbabilityMeasure A)
-  (q : qSpace) : ProbabilityMeasure A := sorry
 
 
 /-- required property of `quantilizer`.
@@ -89,8 +97,6 @@ lemma ok_quantilizer (q : qSpace) :
 lemma volume_topQ (q : qSpace) :
     (volume (topQ q)).toReal = q.1 := by
   sorry
-
-
 
 /-- sanity check:
 if q = 1, then the quantilizer is the prior.
@@ -116,6 +122,7 @@ then the expected cost with a quantilizer is at most 1 / q.
 lemma cost_bound (q : qSpace) (cost : A → NNReal)
     (hcost : ∫ a, (cost a).toReal ∂γ.toMeasure ≤ 1) :
     ∫ a, (cost a).toReal ∂ (quantilizer U γ q).toMeasure ≤ 1 / q.1 := by
+
   sorry
 
 /-- Cost constraint on a probability measure p:
@@ -152,4 +159,3 @@ theorem quantilizer_optimality (t : ℝ) (ht : 1 < t) :
 end Cost
 
 end Quantilizers
-

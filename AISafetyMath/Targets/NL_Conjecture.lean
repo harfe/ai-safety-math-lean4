@@ -1,4 +1,5 @@
-import Mathlib
+module
+public import Mathlib
 
 set_option linter.style.header false
 
@@ -11,14 +12,16 @@ The main conjecture is `main_conjecture`.
 It also includes some additional sanity check lemmas.
 -/
 
+@[expose] public section
+
+
+namespace NaturalLatents
+
 /- We do not use random variables for the formalization,
 instead work with probability measures on the value space directly.
 The disadvantage of working formally with random variables
 is that one would need to make changes to the underlying measure space.
 -/
-
-
-namespace NaturalLatents
 
 open ProbabilityTheory MeasureTheory
 
@@ -95,12 +98,12 @@ def swapBC : (A × B × C) → (A × C × B) := fun x => (x.1,x.2.2,x.2.1)
 
 noncomputable
 def swapABProb (P : ProbabilityMeasure (A × B × C)) : ProbabilityMeasure (B × A × C)
-  := P.map (f := swapAB) (AEMeasurable.of_discrete)
+  := P.map (f := swapAB)
 
 
 noncomputable
 def swapBCProb (P : ProbabilityMeasure (A × B × C)) : ProbabilityMeasure (A × C × B)
-  := P.map (f := swapBC) (AEMeasurable.of_discrete)
+  := P.map (f := swapBC)
 
 noncomputable
 def swapACProb (P : ProbabilityMeasure (A × B × C)) : ProbabilityMeasure (C × B × A) :=
@@ -265,7 +268,7 @@ theorem conjecture_solution : MainConjecture := by sorry
 
 theorem conjecture_refutation : ¬MainConjecture := by sorry
 
-/- Not both can be true, otherwise we could conclude `False` from it. 
+/- Not both can be true, otherwise we could conclude `False` from it.
 Both are currently present in the file
 so that Comparator can be pointed at either of them.
 
@@ -276,4 +279,3 @@ end Conjecture
 
 
 end NaturalLatents
-
