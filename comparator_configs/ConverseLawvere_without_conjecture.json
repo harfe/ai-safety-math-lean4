@@ -1,0 +1,15 @@
+{
+    "challenge_module": "AISafetyMath.Targets.ConverseLawvere",
+    "solution_module": "AISafetyMath.Solutions.ConverseLawvere",
+    "theorem_names": [
+      "ConverseLawvere.diag_of_main",
+      "ConverseLawvere.lawvereDomDiag_of_fp",
+      "ConverseLawvere.lawvereDomDiag_unitInterval",
+      "ConverseLawvere.lawvereDomDiag_iff_fp",
+      "ConverseLawvere.not_sigmaCompact"
+    ],
+    "definition_names": [
+    ],
+    "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+    "enable_nanoda": false
+}
