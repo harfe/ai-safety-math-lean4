@@ -144,7 +144,6 @@ an `abbrev`, so routing through `forkChoice` leaves this body with nothing deepe
 its own signature in it and brings the height back to 14, matching the target. Heights
 only steer the elaborator's unfolding order and are irrelevant to the kernel, so none of
 this changes what is proved.
-
 -/
 noncomputable
 def forkDistr (P : ProbabilityMeasure (A × B × C)) : ProbabilityMeasure (A × B × C) :=
