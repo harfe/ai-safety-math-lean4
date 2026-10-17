@@ -9,7 +9,7 @@ public import Mathlib.Probability.ProbabilityMassFunction.Basic
 public import Mathlib.Probability.ProbabilityMassFunction.Constructions
 
 /-!
-Setup for `AISafetyMath.Solutions.NL_Conjecture`: fork/chain densities, natural-latent
+Setup for `Vibeproving.Solutions.NL_Conjecture`: fork/chain densities, natural-latent
 and deterministic-latent predicates on `A × B × C`, and the core mathematical content
 of `conjecture_exact_case` (`conjecture_exact_case_aux`).
 -/
@@ -309,7 +309,7 @@ lemma chainDensity_sum_1 (P : ProbabilityMeasure (A × B × C)) :
     rw [← Finset.mul_sum, ← Finset.mul_sum, hBC b]
     rcases eq_or_ne (P.1 {y : A × B × C | y.2.1 = b}) 0 with hZ | hZ
     · have hABz : P.1 {y : A × B × C | y.1 = a ∧ y.2.1 = b} = 0 :=
-        le_zero_iff.mp ((measure_mono fun y hy => hy.2).trans hZ.le)
+        measure_mono_null (fun _ hy => hy.2) hZ
       rw [hABz, hZ]
       simp only [ProbabilityMeasure.val_eq_to_measure, mul_zero, ENNReal.inv_zero]
     · rw [ENNReal.inv_mul_cancel hZ (measure_ne_top _ _), mul_one]
@@ -678,7 +678,7 @@ lemma fork_pointwise_iff_prodForm (Q : ProbabilityMeasure (A × B × C)) :
   · intro hfork a b c
     rcases eq_or_ne (massA Q a) 0 with hA | hA
     · have hAB : massAB Q a b = 0 :=
-        le_zero_iff.mp ((measure_mono fun y hy => hy.1).trans hA.le)
+        measure_mono_null (fun _ hy => hy.1) hA
       rw [hA, hAB, mul_zero, zero_mul]
     · rw [jointMass, hfork (a, b, c)]
       exact hfd a b c hA
@@ -689,7 +689,7 @@ lemma fork_pointwise_iff_prodForm (Q : ProbabilityMeasure (A × B × C)) :
         le_zero_iff.mp ((measure_mono fun y hy =>
           by rw [Set.mem_singleton_iff.mp hy]; rfl).trans hA.le)
       have hAB : massAB Q a b = 0 :=
-        le_zero_iff.mp ((measure_mono fun y hy => hy.1).trans hA.le)
+        measure_mono_null (fun _ hy => hy.1) hA
       rw [hx, hunfold, hA, hAB, mul_zero, zero_mul, zero_mul]
     · refine (ENNReal.mul_right_inj hA (measure_ne_top _ _)).mp ?_
       calc massA Q a * Q.1 {(a, b, c)}
@@ -715,7 +715,7 @@ lemma chain_pointwise_iff_prodForm (Q : ProbabilityMeasure (A × B × C)) :
     intro a b
     rcases eq_or_ne (massA Q a) 0 with hA | hA
     · have hAB : massAB Q a b = 0 :=
-        le_zero_iff.mp ((measure_mono fun y hy => hy.1).trans hA.le)
+        measure_mono_null (fun _ hy => hy.1) hA
       simp [hA, hAB]
     · calc massA Q a * ((massA Q a)⁻¹ * massAB Q a b)
           = (massA Q a * (massA Q a)⁻¹) * massAB Q a b := by ring
@@ -846,7 +846,7 @@ lemma posteriorB_mul_massB (Q : ProbabilityMeasure (A × B × C)) (b : B) (a : A
     posteriorB Q b a * massB Q b = massAB Q a b := by
   rcases eq_or_ne (massB Q b) 0 with h0 | h0
   · have hAB : massAB Q a b = 0 :=
-      le_zero_iff.mp ((measure_mono fun y hy => hy.2).trans h0.le)
+      measure_mono_null (fun _ hy => hy.2) h0
     simp [posteriorB, h0, hAB]
   · have := Q.2
     rw [posteriorB]
@@ -915,7 +915,7 @@ lemma massBC_eq_massB_mul (Q : ProbabilityMeasure (A × B × C))
   refine Finset.sum_congr rfl fun a _ => ?_
   rcases eq_or_ne (massA Q a) 0 with hA | hA
   · have hAC : massAC Q a c = 0 :=
-      le_zero_iff.mp ((measure_mono fun y hy => hy.1).trans hA.le)
+      measure_mono_null (fun _ hy => hy.1) hA
     have hJ : jointMass Q a b c = 0 :=
       le_zero_iff.mp ((measure_mono fun y hy => by rw [Set.mem_singleton_iff.mp hy]; rfl).trans
         hA.le)
@@ -1130,7 +1130,9 @@ lemma detLatent_fork_error (Q : ProbabilityMeasure (A × B × C))
     rcases eq_or_ne (classRep Q b') k with hk | hk
     · rw [ite_eq_left hk]
       refine (Finset.sum_eq_single_of_mem c (Finset.mem_univ _) fun c' _ hne =>
-        Set.indicator_apply_eq_zero.mpr fun hmem => (hne hmem.2).elim).trans ?_
+        Set.indicator_apply_eq_zero.mpr
+          fun (hmem : (b', c') ∈ {x : B × C | classRep Q x.1 = k ∧ x.2 = c}) =>
+            (hne hmem.2).elim).trans ?_
       rw [Set.indicator_of_mem (Set.mem_ofPred.mpr ⟨hk, rfl⟩), getBCProb_singleton]
     · rw [ite_eq_right hk]
       exact Finset.sum_eq_zero fun c' _ =>

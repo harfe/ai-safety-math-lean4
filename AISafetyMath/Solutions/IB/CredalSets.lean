@@ -291,14 +291,14 @@ thin wrapper: the Comparator compares reducibility hints (definition heights) of
 `def`s that mention the hole (`byClosedConvexHull`, `infraKernelOfEnvironments`), `getHeight`
 reports `0` for an `abbrev`, and the target's `sorry` body also contributes nothing — so both
 sides agree on the height. -/
-abbrev closedConvexHullAux (s : Set (Δ X)) : Set (Δ X) := closure (probConvexHull s)
+noncomputable abbrev closedConvexHullAux (s : Set (Δ X)) : Set (Δ X) := closure (probConvexHull s)
 
 /-- Definition hole for closed convex hull of a set.
 
 The instance binders are spelled out explicitly (rather than inherited from the section
 `variable`s) so that the signature matches the challenge file's hole, whose `sorry` body
 forces all four instances to be bound. -/
-def closedConvexHull {X : Type*}
+noncomputable def closedConvexHull {X : Type*}
   [MetricSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X]
   (s : Set (Δ X)) : Set (Δ X) := closedConvexHullAux s
 
@@ -320,7 +320,7 @@ lemma ok_closedConvexHull (s : Set (Δ X)) :
 
 /-- Finally: we can construct elements in `Credal X` by taking
 the closed convex hull. -/
-def byClosedConvexHull (s : Set (Δ X)) (hne : s.Nonempty) : Credal X :=
+noncomputable def byClosedConvexHull (s : Set (Δ X)) (hne : s.Nonempty) : Credal X :=
   ofClosedConvex
     (closedConvexHull s)
     (hne.mono (ok_closedConvexHull s).1)

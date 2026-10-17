@@ -158,6 +158,7 @@ lemma ok_closedConvexHull (s : Set (Δ X)) :
 
 /-- Finally: we can construct elements in `Credal X` by taking
 the closed convex hull. -/
+noncomputable
 def byClosedConvexHull (s : Set (Δ X)) (hne : s.Nonempty) : Credal X :=
   ofClosedConvex
     (closedConvexHull s)
@@ -336,7 +337,7 @@ variable [TopologicalSpace O] [DiscreteTopology O]
 
 section InfraRegret
 
-/- we use a continuous loss function -/
+/- we use a loss function. Often continuous. -/
 variable (L : Destiny A O → unitInterval)
 
 /-- Definition: expected loss of a policy wrt a CCL -/
