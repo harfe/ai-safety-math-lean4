@@ -20,17 +20,14 @@ fi
 
 # lake, landrun, comparator, lean4export should be in $PATH:
 command -v lake
-command -v landrun
-command -v comparator
-command -v lean4export
+command -v bwrap
 
 
 main_run() {
   local json_file="$1"
   test -f "$json_file"
 
-  # use command recommended by https://github.com/leanprover/comparator/blob/master/README.md
-  systemd-run --property=RestrictAddressFamilies=~AF_UNIX --user --pty -E PATH="$PATH" --working-directory "$(pwd)" -- bash -c 'lake env comparator $1' _ "$json_file"
+  lake comparator --config="$1"
 
   # lake env comparator "$json_file"
 
