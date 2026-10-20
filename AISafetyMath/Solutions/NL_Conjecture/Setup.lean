@@ -9,7 +9,7 @@ public import Mathlib.Probability.ProbabilityMassFunction.Basic
 public import Mathlib.Probability.ProbabilityMassFunction.Constructions
 
 /-!
-Setup for `Vibeproving.Solutions.NL_Conjecture`: fork/chain densities, natural-latent
+Setup for `AISafetyMath.Solutions.NL_Conjecture`: fork/chain densities, natural-latent
 and deterministic-latent predicates on `A × B × C`, and the core mathematical content
 of `conjecture_exact_case` (`conjecture_exact_case_aux`).
 -/

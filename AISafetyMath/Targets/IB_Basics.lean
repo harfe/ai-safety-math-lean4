@@ -5,13 +5,15 @@ public import AISafetyMath.Targets.IB_RL
 
 set_option linter.style.header false
 
-/-
+/-!
 This file formalizes the definitions and propositions in
 Articles/IB_Basics.md
 
 The main results are
 - `continuous_of_CCL`
+- `continuous_expCCL`
 - `exists_ib_optimal_policy`
+- `ib_optimal_learns_class`
 
 It also includes some additional sanity check lemmas.
 -/
@@ -42,12 +44,11 @@ instance instMetricSpaceDeltaX : MetricSpace (Δ X) :=
   metrizableSpaceMetric (Δ X)
 
 
-/- sanity check: the topology induced by that metric
+/- Sanity check: the topology induced by that metric
 is the same as the standard mathlib topology (the weak topology) on `Δ X`.
 Note that we need to go through `PseudoMetricSpace` and `UniformSpace`
 to get the topology induced by the metric.
 -/
-noncomputable
 example : instMetricSpaceDeltaX.toPseudoMetricSpace.toUniformSpace.toTopologicalSpace =
   (ProbabilityMeasure.instTopologicalSpace : TopologicalSpace (Δ X))
   := rfl
@@ -60,11 +61,11 @@ iff testing with all continuous functions converges.
 lemma convergence_iff_weak (μ : ℕ → Δ X) (μ0 : Δ X) :
     Filter.Tendsto (fun n => dist (μ n) μ0) Filter.atTop (nhds 0)
     ↔ ∀ (f : X → ℝ), Continuous f →
-    Filter.Tendsto (fun n => ∫ x,  f x ∂(μ n)) Filter.atTop (nhds (∫ x, f x ∂ μ0)) := by
+    Filter.Tendsto (fun n => ∫ x, f x ∂(μ n)) Filter.atTop (nhds (∫ x, f x ∂ μ0)) := by
   sorry
 
 /- We want to use a metric on the nonempty compact sets of `X`.
-Mathlib has actually a `MetricSpace` instance.
+Mathlib actually has a `MetricSpace` instance.
 The metric used is the Hausdorff distance.
 -/
 noncomputable
@@ -81,7 +82,7 @@ We convert probability measures to measures to signed measures,
 which is a vector space where mathlib can define convexity.
 -/
 def ProbConvex {X : Type*} [MeasurableSpace X]
-  (s : Set (ProbabilityMeasure X)) : Prop :=
+    (s : Set (ProbabilityMeasure X)) : Prop :=
   Convex ℝ ((fun x => x.toMeasure.toSignedMeasure) '' s)
 
 /-- an alternative equivalent definition:
@@ -103,22 +104,22 @@ def Credal X [MetricSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X]
   { s : NonemptyCompacts (Δ X) // ProbConvex s.carrier }
 
 /-- Lemma: the set of credal sets with the Hausdorff distance is a metric space.
-This instance can be exported.
 -/
 noncomputable scoped
 instance instCredalMetric : MetricSpace (Credal X) := Subtype.metricSpace
 
 namespace Credal
 
+/-- Get the set itself -/
 def carrier (s : Credal X) := s.1.carrier
 
-/- confirming that the metric on `Credal X` is the Hausdorff distance.
+/- Confirming that the metric on `Credal X` is the Hausdorff distance.
 We do not redefine Hausdorff distance manually.
 -/
 example (s t : Credal X) :
     dist s t = Metric.hausdorffDist s.carrier t.carrier := rfl
 
-/-- sanity check: confirming that distance on `Credal X`
+/-- Sanity check: confirming that distance on `Credal X`
 matches our definition of Hausdorff distance.
 -/
 lemma dist_is_hausdorff (s t : Credal X) :
@@ -126,11 +127,11 @@ lemma dist_is_hausdorff (s t : Credal X) :
     (⨆ (y : t.carrier), ⨅ (x : s.carrier), dist y.1 x.1) := by
   sorry
 
-
+/-- construct a credal set from a closed convex set -/
 def ofClosedConvex (s : Set (Δ X)) (hne : s.Nonempty)
     (hcl : IsClosed s) (hcvx : ProbConvex s) : Credal X :=
-    ⟨{ carrier := s, nonempty' := hne,
-       isCompact' := IsClosed.isCompact hcl}, hcvx⟩
+  ⟨{ carrier := s, nonempty' := hne,
+     isCompact' := IsClosed.isCompact hcl}, hcvx⟩
 
 
 /- we also want to be able to construct elements of `Credal X`
@@ -142,8 +143,9 @@ We will also need a bunch of helper lemmas.
 /-- Definition hole for closed convex hull of a set. -/
 noncomputable
 def closedConvexHull {X : Type*}
-  [MetricSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X]
-  (s : Set (Δ X)) : Set (Δ X) := sorry
+    [MetricSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X]
+    (s : Set (Δ X)) : Set (Δ X) 
+  := sorry
 
 
 /-- Pinning down the definition by its properties:
@@ -151,8 +153,7 @@ The closed convex hull of a set `S` is the smallest closed and convex set that c
 -/
 lemma ok_closedConvexHull (s : Set (Δ X)) :
     s ⊆ closedConvexHull s ∧ ProbConvex (closedConvexHull s) ∧ IsClosed (closedConvexHull s)
-    ∧ ∀ (t : Set (Δ X)), s ⊆ t → ProbConvex t → IsClosed t → closedConvexHull s ⊆ t
-    := by
+    ∧ ∀ (t : Set (Δ X)), s ⊆ t → ProbConvex t → IsClosed t → closedConvexHull s ⊆ t := by
   sorry
 
 
@@ -202,7 +203,7 @@ and the metric is compatible with the product topology.
 noncomputable scoped
 instance instDestinyMetric : MetricSpace (Destiny A O) := PiNat.metricSpace
 
-/-- sanity check:
+/-- Sanity check:
 confirming that the metric given by `PiNat.metricSpace`
 matches our definition
 -/
@@ -212,14 +213,12 @@ lemma ok_destinyMetric (h1 h2 : Destiny A O) (t : ℕ)
     dist h1 h2 = (2 : ℝ) ^ (- (t : ℝ)) := by
   sorry
 
-/- sanity check:
+/- Sanity check:
 the topology induced by `PiNat.metricSpace` is the same
 as the product topology.
 -/
 example : instDestinyMetric.toPseudoMetricSpace.toUniformSpace.toTopologicalSpace =
   (Pi.topologicalSpace : TopologicalSpace (Destiny A O)) := rfl
-
-
 
 /-- The space of policies as a topological space.
 Mathlib uses the product topology here
@@ -233,16 +232,15 @@ example : CompactSpace (Destiny A O) := Function.compactSpace
 
 /-- Definition:
 infrakernel generated by a set of environments.
-Note that we say infraKernel here despite not yet knowing that the map is continuous
 -/
 noncomputable
 def infraKernelOfEnvironments (E : Set (Environment A O)) (hne : E.Nonempty)
     (π : Policy A O) : Credal (Destiny A O) :=
-    Credal.byClosedConvexHull
-      ( (fun μ => trajectoryProbMeasure π μ) '' E)
-      (Set.Nonempty.image (fun μ ↦ trajectoryProbMeasure π μ) hne)
+  Credal.byClosedConvexHull
+  ( (fun μ => trajectoryProbMeasure π μ) '' E)
+  (Set.Nonempty.image (fun μ => trajectoryProbMeasure π μ) hne)
 
-/-- sanity check: infrakernel generated by a singleton
+/-- Sanity check: infrakernel generated by a singleton
 is `trajectoryProbMeasure`.
 -/
 lemma infraKernel_singleton (μ : Environment A O) (π : Policy A O) :
@@ -285,7 +283,7 @@ def expIB (Θ : Credal X) (f : X → ℝ) : ℝ :=
   sSup ((fun θ => ∫ x, f x ∂θ.toMeasure) '' Θ.carrier)
 
 
-/-- sanity check:
+/-- Sanity check:
 If `f` is bounded and measurable, then it is integrable for all probability measures.
 -/
 lemma exp_well_defined_of_measurable_bounded (f : X → ℝ)
@@ -295,7 +293,7 @@ lemma exp_well_defined_of_measurable_bounded (f : X → ℝ)
     Integrable f θ.toMeasure := by
   sorry
 
-/-- sanity check:
+/-- Sanity check:
 If `f` is bounded from above, then `θ ↦ ∫ x, f x ∂θ` is bounded from above.
 Thus, `sSup` in `expIB` is bounded above and does not have the `0` junk value
 -/
@@ -304,7 +302,7 @@ lemma exp_values_bddAbove_of_bddAbove (Θ : Credal X) (f : X → ℝ)
     BddAbove ((fun θ => ∫ x, f x ∂θ.toMeasure) '' Θ.carrier) := by
   sorry
 
-/-- sanity check:
+/-- Sanity check:
 If `f` is continuous, then the supremum in `expIB` is attained.
 -/
 lemma expIB_has_max (Θ : Credal X) (f : X → ℝ)
@@ -313,8 +311,8 @@ lemma expIB_has_max (Θ : Credal X) (f : X → ℝ)
   sorry
 
 
-/--
-Lemma: `expIB` is continuous in `Θ`.
+/-- helper lemma: 
+`expIB` is continuous in `Θ`.
 -/
 lemma expIB_continuous_in_credal (f : X → ℝ) (hf : Continuous f) :
     Continuous (fun Θ => expIB Θ f) := by
@@ -346,10 +344,9 @@ def expCCL (Λ : Policy A O → Credal (Destiny A O)) (π : Policy A O) : ℝ :=
   expIB (Λ π) (Subtype.val ∘ L)
 
 
-/-- sanity check:  `expCCL` has values in `unitInterval` -/
+/-- Sanity check:  `expCCL` has values in `unitInterval` -/
 lemma expCCL_mem_unitInterval (Λ : Policy A O → Credal (Destiny A O)) (π : Policy A O) :
     expCCL L Λ π ∈ unitInterval := by
-  /- sanity check:  `expCCL` has values in `unitInterval` -/
   sorry
 
 
@@ -363,7 +360,7 @@ def infraRegret (Λ : Policy A O → Credal (Destiny A O)) (π : Policy A O) : E
   (expCCL L Λ π : EReal)
   - ⨅ (π' : Policy A O), (expCCL L Λ π' : EReal)
 
-/-- sanity check:  `infraRegret` has values between `0` and `1`. -/
+/-- Sanity check:  `infraRegret` has values between `0` and `1`. -/
 lemma infraRegret_mem_unitInterval (Λ : Policy A O → Credal (Destiny A O)) (π : Policy A O) :
     infraRegret L Λ π ∈ {a : EReal | 0 ≤ a ∧ a ≤ 1} := by
   sorry
@@ -386,9 +383,10 @@ def IsIBOptimalPolicy {I : Type*}
     ∫ i, expCCL L (Λ_fam i) π ∂ζ.toMeasure
   )
 
-/- Corollary 1:
+/-- Corollary 1:
+There exists an Infra-Bayes-optimal policy.
 Needs `Nonempty A`, otherwise policy space is empty.
- -/
+-/
 theorem exists_ib_optimal_policy {I : Type*}
     [MeasurableSpace I] [DiscreteMeasurableSpace I] (ζ : ProbabilityMeasure I)
     [Nonempty A]
@@ -404,19 +402,26 @@ section Learnability
 /- Loss function now has a `γ` parameter. -/
 variable (L : discount → Destiny A O → unitInterval)
 
-/-- Definition: a policy family learns class of CCLs -/
+/-- Definition: a policy family learns class of CCLs
+(or infrakernels, more generally) -/
 def LearnsCCLClass {I : Type*}
     (Λ_fam : I → Policy A O → Credal (Destiny A O))
     (π_fam : discount → Policy A O) : Prop :=
   ∀ (i : I), Filter.Tendsto
   (fun (γ : discount) => infraRegret (L γ) (Λ_fam i) (π_fam γ)) Filter.atTop (nhds 0)
 
+/-- Definition: a class of infrakernels is non-anytime learnable. -/
 def NonAnytimeLearnableIB {I : Type*}
     (Λ_fam : I → Policy A O → Credal (Destiny A O)) : Prop :=
   ∃ π_fam, LearnsCCLClass L Λ_fam π_fam
 
 
-/- Proposition 3 -/
+/-- Proposition 3
+An Infra-Bayes-optimal policy learns the class.
+
+It happens that we can leave out measurability of `L`:
+the same junk values get used in IsIBOptimalPolicy and LearnsCCLClass in that case.
+-/
 theorem ib_optimal_learns_class {I : Type*}
     [MeasurableSpace I] [DiscreteMeasurableSpace I] (ζ : ProbabilityMeasure I)
     (Λ_fam : I → Policy A O → Credal (Destiny A O))
@@ -426,8 +431,6 @@ theorem ib_optimal_learns_class {I : Type*}
     (h_ib_opt : ∀ γ, IsIBOptimalPolicy (L γ) ζ Λ_fam (π_fam γ)) :
     LearnsCCLClass L Λ_fam π_fam := by
   sorry
-
-
 
 end Learnability
 
