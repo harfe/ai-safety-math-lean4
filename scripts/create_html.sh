@@ -20,7 +20,7 @@ mkdir -p html
 
 for file in *.md; do
   outfile="html/${file%.*}.html"
-  pandoc "$file" -f gfm+tex_math_dollars+tex_math_gfm -t html --math-method=mathml -o "$outfile"
+  pandoc "$file" -f gfm+tex_math_dollars+tex_math_gfm -t html -s --math-method=mathjax -o "$outfile"
   echo converted "$file"
 
 done
