@@ -1,0 +1,16 @@
+{
+    "challenge_module": "AISafetyMath.Targets.MaxLotLot",
+    "solution_module": "AISafetyMath.Solutions.MaxLotLot",
+    "theorem_names": [
+      "MaxLotLot.SymNashGame.integrable_of_meas_bounded",
+      "MaxLotLot.SymNashGame.exists_nasheq_of_cc_of_zerosum",
+      "MaxLotLot.MaxLot.exists_max_lot",
+      "MaxLotLot.MaxLot.prefer_measurable",
+      "MaxLotLot.prefer_measurable",
+      "MaxLotLot.exists_of_finite_lot"
+    ],
+    "definition_names": [
+    ],
+    "permitted_axioms": ["propext", "Quot.sound", "Classical.choice"],
+    "enable_nanoda": false
+}

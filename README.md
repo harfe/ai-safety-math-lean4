@@ -23,6 +23,7 @@ you can convert the markdown to html files by executing
 - RL for understanding Infra-Bayesianism
 - Credal Sets Basics of Infra-Bayesianism
 - The converse Lawvere problem
+- Maximal Lottery Lotteries
 
 ## Targets
 
