@@ -17,9 +17,12 @@ you can convert the markdown to html files by executing
 
 ### Topics covered so far
 
+- Logical Induction
 - Quantilizers
 - A conjecture about Natural Latents
-- Small parts of Infra-Bayesianism
+- RL for understanding Infra-Bayesianism
+- Credal Sets Basics of Infra-Bayesianism
+- The converse Lawvere problem
 
 ## Targets
 
