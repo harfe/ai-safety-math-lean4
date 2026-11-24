@@ -71,7 +71,7 @@ theorem isLocallyConstant_of_surjectivityCondition {X : Type} [TopologicalSpace 
   have hψ1 (t : ℝ) : ψ t ≤ 1 :=
     hsum.tsum_eq ▸ Summable.tsum_le_tsum (fun n => (hterm t n).2) (hsumm t) hsum.summable
   let h : C(X, I) := ⟨fun z => ⟨ψ (g z), hψ0 _, hψ1 _⟩,
-    (hψc.comp (continuous_subtype_val.comp g.continuous)).subtype_mk _⟩
+    (hψc.comp (continuous_subtypeVal.comp g.continuous)).subtype_mk _⟩
   obtain ⟨x, hx⟩ := hcov h
   obtain ⟨n, hn⟩ := exists_mem_compactCovering x
   have hlt := hyd n x hn
@@ -105,7 +105,7 @@ theorem not_sigmaCompactSpace {X : Type} [TopologicalSpace X] [SigmaCompactSpace
     have : CompactSpace (compactCovering X n) :=
       isCompact_iff_compactSpace.mp (isCompact_compactCovering X n)
     rw [Set.image_eq_range]
-    exact (hloc.comp_continuous continuous_subtype_val).range_finite
+    exact (hloc.comp_continuous continuous_subtypeVal).range_finite
   rw [hsurj] at hcount
   have himg := hcount.image (Subtype.val : I → ℝ)
   rw [Set.image_univ, Subtype.range_coe] at himg

@@ -902,14 +902,14 @@ private lemma convexHull_subset_envelopeBarycenter_image (hp : IsPMF p) :
     Classical.choice (Function.Embedding.nonempty_of_card_le (by simpa using htcard))
   rcases (Finset.mem_convexHull'.mp hxt) with ⟨w, hw_nonneg, hw_sum, hw_center⟩
   let weights : Fin (envelopeSize (α := α) (β := β)) → ℝ :=
-    fun j => ∑ i : t, if e i = j then w i.1 else 0
+    fun j => ∑ i : t, if e i = j then w i.val else 0
   let points : Fin (envelopeSize (α := α) (β := β)) → (α × β → ℝ) × ℝ :=
-    fun j => if h : ∃ i : t, e i = j then (Classical.choose h).1 else (p, Phi p)
+    fun j => if h : ∃ i : t, e i = j then (Classical.choose h).val else (p, Phi p)
   have hinner_weight (i : t) :
-      (∑ j, if e i = j then w i.1 else 0) = w i.1 := by
+      (∑ j, if e i = j then w i.val else 0) = w i.val := by
     have hsingle :
-        (∑ j, if e i = j then w i.1 else 0) =
-          (if e i = e i then w i.1 else 0) := by
+        (∑ j, if e i = j then w i.val else 0) =
+          (if e i = e i then w i.val else 0) := by
       apply Finset.sum_eq_single (e i)
       · intro j _ hji
         simp [Ne.symm hji]
@@ -921,14 +921,14 @@ private lemma convexHull_subset_envelopeBarycenter_image (hp : IsPMF p) :
     apply Finset.sum_nonneg
     intro i _
     split
-    · exact hw_nonneg i.1 i.2
+    · exact hw_nonneg i.val i.property
     · exact le_rfl
   have hweights_sum : ∑ j, weights j = 1 := by
     calc
-      (∑ j, weights j) = ∑ j, ∑ i : t, if e i = j then w i.1 else 0 := rfl
-      _ = ∑ i : t, ∑ j, if e i = j then w i.1 else 0 := by
+      (∑ j, weights j) = ∑ j, ∑ i : t, if e i = j then w i.val else 0 := rfl
+      _ = ∑ i : t, ∑ j, if e i = j then w i.val else 0 := by
         rw [Finset.sum_comm]
-      _ = ∑ i : t, w i.1 := by
+      _ = ∑ i : t, w i.val := by
         apply Finset.sum_congr rfl
         intro i _
         exact hinner_weight i
@@ -938,21 +938,21 @@ private lemma convexHull_subset_envelopeBarycenter_image (hp : IsPMF p) :
       _ = 1 := hw_sum
   have hpoints (j : Fin (envelopeSize (α := α) (β := β))) : points j ∈ phiGraph := by
     by_cases hj : ∃ i : t, e i = j
-    · rw [show points j = (Classical.choose hj).1 by simp [points, hj]]
-      exact htGraph (Classical.choose hj).2
+    · rw [show points j = (Classical.choose hj).val by simp [points, hj]]
+      exact htGraph (Classical.choose hj).property
     · rw [show points j = (p, Phi p) by simp [points, hj]]
       exact ⟨p, hp, rfl⟩
   have hterm (j : Fin (envelopeSize (α := α) (β := β))) :
       weights j • points j =
-        ∑ i : t, if e i = j then w i.1 • i.1 else 0 := by
+        ∑ i : t, if e i = j then w i.val • i.val else 0 := by
     by_cases hj : ∃ i : t, e i = j
     · let i₀ : t := Classical.choose hj
       have hi₀ : e i₀ = j := Classical.choose_spec hj
-      have hweight : weights j = w i₀.1 := by
+      have hweight : weights j = w i₀.val := by
         dsimp [weights]
         have hsingle :
-            (∑ i : t, if e i = j then w i.1 else 0) =
-              (if e i₀ = j then w i₀.1 else 0) := by
+            (∑ i : t, if e i = j then w i.val else 0) =
+              (if e i₀ = j then w i₀.val else 0) := by
           apply Finset.sum_eq_single i₀
           · intro i _ hii₀
             have hei : e i ≠ j := by
@@ -962,14 +962,14 @@ private lemma convexHull_subset_envelopeBarycenter_image (hp : IsPMF p) :
           · simp only [univ_eq_attach, mem_attach, not_true_eq_false, ite_eq_right_iff,
               IsEmpty.forall_iff]
         simpa [hi₀] using hsingle
-      have hpoint : points j = i₀.1 := by
+      have hpoint : points j = i₀.val := by
         dsimp [points, i₀]
         rw [dite_eq_left hj]
       rw [hweight, hpoint]
       symm
       have hsingle :
-          (∑ i : t, if e i = j then w i.1 • i.1 else 0) =
-            (if e i₀ = j then w i₀.1 • i₀.1 else 0) := by
+          (∑ i : t, if e i = j then w i.val • i.val else 0) =
+            (if e i₀ = j then w i₀.val • i₀.val else 0) := by
         apply Finset.sum_eq_single i₀
         · intro i _ hii₀
           have hei : e i ≠ j := by
@@ -989,18 +989,18 @@ private lemma convexHull_subset_envelopeBarycenter_image (hp : IsPMF p) :
   have hbary : envelopeBarycenter (weights, points) = x := by
     calc
       envelopeBarycenter (weights, points) = ∑ j, weights j • points j := rfl
-      _ = ∑ j, ∑ i : t, if e i = j then w i.1 • i.1 else 0 := by
+      _ = ∑ j, ∑ i : t, if e i = j then w i.val • i.val else 0 := by
         apply Finset.sum_congr rfl
         intro j _
         exact hterm j
-      _ = ∑ i : t, ∑ j, if e i = j then w i.1 • i.1 else 0 := by
+      _ = ∑ i : t, ∑ j, if e i = j then w i.val • i.val else 0 := by
         rw [Finset.sum_comm]
-      _ = ∑ i : t, w i.1 • i.1 := by
+      _ = ∑ i : t, w i.val • i.val := by
         apply Finset.sum_congr rfl
         intro i _
         have hsingle :
-            (∑ j, if e i = j then w i.1 • i.1 else 0) =
-              (if e i = e i then w i.1 • i.1 else 0) := by
+            (∑ j, if e i = j then w i.val • i.val else 0) =
+              (if e i = e i then w i.val • i.val else 0) := by
           apply Finset.sum_eq_single (e i)
           · intro j _ hji
             simp [Ne.symm hji]
@@ -1144,8 +1144,8 @@ theorem exists_T_optimal_latent (hp : IsPMF p) :
       ⟨⟨Latent.const hp, Latent.const_isDet hp⟩⟩
     unfold T
     refine le_ciInf fun W => ?_
-    have hmin := hf₀min W.1.detCode (Finset.mem_univ _)
-    have hscore := W.1.functionLatent_detCode_score_eq hp W.2
+    have hmin := hf₀min W.val.detCode (Finset.mem_univ _)
+    have hscore := W.val.functionLatent_detCode_score_eq hp W.property
     simpa [scoreOf, V₀] using hmin.trans_eq hscore
   have hT_le_V₀ : T p ≤ V₀.score := T_le_score V₀ hV₀det
   exact ⟨V₀, hV₀det, le_antisymm hV₀_le_T hT_le_V₀⟩

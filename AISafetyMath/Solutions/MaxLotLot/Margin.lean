@@ -4,8 +4,6 @@ public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Measure.DiracProba
 public import AISafetyMath.Solutions.MaxLotLot.Lotteries
 
-set_option linter.style.header false
-
 /-!
 # Margins, mixtures and one-sided tests
 
@@ -136,9 +134,9 @@ variable {C : Type} [Finite C] [MeasurableSpace C] [DiscreteMeasurableSpace C]
 noncomputable def mix (t : unitInterval) (B P : ProbabilityMeasure C) : ProbabilityMeasure C :=
   ⟨ENNReal.ofReal (1 - t) • (B : Measure C) + ENNReal.ofReal t • (P : Measure C), by
     constructor
-    simp only [Measure.coe_add, Measure.coe_smul, Pi.add_apply, Pi.smul_apply, measure_univ,
+    simp only [FunLike.coe_add, FunLike.coe_smul, Pi.add_apply, Pi.smul_apply, measure_univ,
       smul_eq_mul, mul_one]
-    rw [← ENNReal.ofReal_add (by linarith [t.2.2]) t.2.1]
+    rw [← ENNReal.ofReal_add (by linarith [t.property.2]) t.property.1]
     simp only [sub_add_cancel, ENNReal.ofReal_one]⟩
 
 lemma integral_mix (t : unitInterval) (B P : ProbabilityMeasure C) (f : C → ℝ) :
@@ -149,8 +147,8 @@ lemma integral_mix (t : unitInterval) (B P : ProbabilityMeasure C) (f : C → �
     = _
   rw [integral_add_measure (Integrable.of_finite.smul_measure ENNReal.ofReal_ne_top)
     (Integrable.of_finite.smul_measure ENNReal.ofReal_ne_top), integral_smul_measure,
-    integral_smul_measure, ENNReal.toReal_ofReal (by linarith [t.2.2]),
-    ENNReal.toReal_ofReal t.2.1, smul_eq_mul, smul_eq_mul]
+    integral_smul_measure, ENNReal.toReal_ofReal (by linarith [t.property.2]),
+    ENNReal.toReal_ofReal t.property.1, smul_eq_mul, smul_eq_mul]
 
 end Mix
 

@@ -33,7 +33,7 @@ abbrev Destiny := ℕ → (A × O)
 
 /-- helper function. Oldest appear first in the list -/
 def initialSegment (h : Destiny A O) (n : ℕ) :
-    History A O := List.ofFn (fun (i: Fin n) => h i.1)
+    History A O := List.ofFn (fun (i: Fin n) => h i.val)
 
 /-- Defining momentary loss as functions that map histories to `unitInterval`.
 (Mathlib defines `unitInterval : Set ℝ` as `Set.Icc 0 1`)
@@ -70,13 +70,13 @@ For `t = 0`, the summand is `L` on the empty History
 -/
 noncomputable def totalLoss (L : MomentaryLoss A O)
     (γ : discount) : Destiny A O → ℝ :=
-  fun h => (1 - γ.1) * ∑' (t : ℕ), γ.1 ^ t * L (initialSegment A O h t)
+  fun h => (1 - γ.val) * ∑' (t : ℕ), γ.val ^ t * L (initialSegment A O h t)
 
 /-- Sanity check: the infinite sum exists.
 -/
 lemma totalLoss_summable (L : MomentaryLoss A O) (γ : discount)
     (h : Destiny A O) : 
-    Summable (fun t => γ.1 ^ t * L (initialSegment A O h t)) := by
+    Summable (fun t => γ.val ^ t * L (initialSegment A O h t)) := by
   sorry
 
 
@@ -129,7 +129,7 @@ instance instProbMeasAfterHist (π : Policy A O) (μ : Environment A O) (h : His
     IsProbabilityMeasure (measureAfterHist π μ h) := by
   have hIMK : IsMarkovKernel
       { toFun := fun a => (μ h a).toMeasure, measurable' := Measurable.of_discrete } :=
-    ⟨fun a => (μ h a).2⟩
+    ⟨fun a => (μ h a).property⟩
   exact Measure.instIsProbabilityMeasureProdCompProdOfIsMarkovKernel
 
 
@@ -178,8 +178,8 @@ lemma trajectoryMeasure_cylinder (π : Policy A O) (μ : Environment A O)
     (h : History A O) :
     (trajectoryMeasure π μ) {d | initialSegment A O d h.length = h}
     = ∏ (t : Fin h.length),
-    π (h.take t.1) {(h.get t).1} *
-    μ (h.take t.1) (h.get t).1 {(h.get t).2} := by
+    π (h.take t.val) {(h.get t).fst} *
+    μ (h.take t.val) (h.get t).fst {(h.get t).snd} := by
   sorry
 
 /-- Sanity check: `trajectoryMeasure` is uniquely characterized
@@ -189,8 +189,8 @@ lemma trajectoryMeasure_unique (π : Policy A O) (μ : Environment A O)
     (m2 : Measure (Destiny A O))
     (hm2 : ∀ (h : History A O), m2 {d | initialSegment A O d h.length = h}
       = ∏ (t : Fin h.length),
-      π (h.take t.1) {(h.get t).1} *
-      μ (h.take t.1) (h.get t).1 {(h.get t).2}) :
+      π (h.take t.val) {(h.get t).fst} *
+      μ (h.take t.val) (h.get t).fst {(h.get t).snd}) :
     m2 = trajectoryMeasure π μ := by
   sorry
 

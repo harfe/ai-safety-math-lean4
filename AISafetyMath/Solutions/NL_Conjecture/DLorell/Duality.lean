@@ -629,7 +629,7 @@ theorem valid_iff_feasible {S : Finset (α × β)} {w : α × β → ℝ} (hw : 
       intro y
       rw [hcol y, ← hLambdaCol]
     obtain ⟨z₀, hz₀⟩ : S.Nonempty := by
-      simpa [Finset.nonempty_iff_ne_empty] using hSempty
+      simpa [Finset.ne_empty_iff_nonempty] using hSempty
     let du : α → ℝ := fun x => if x = z₀.1 then 1 else 0
     let dv : β → ℝ := fun y => if y = z₀.2 then 1 else 0
     have hdu : IsPMF du := by
@@ -1075,15 +1075,15 @@ private lemma dualConvexHull_subset_barycenter_image
   rcases (Finset.mem_convexHull'.mp hxt) with
     ⟨weights₀, hweights₀_nonneg, hweights₀_sum, hcenter⟩
   let weights : Fin (dualHullSize (α := α) (β := β)) → ℝ :=
-    fun j => ∑ i : t, if e i = j then weights₀ i.1 else 0
+    fun j => ∑ i : t, if e i = j then weights₀ i.val else 0
   let points : Fin (dualHullSize (α := α) (β := β)) →
       (α × β → ℝ) × ℝ :=
-    fun j => if h : ∃ i : t, e i = j then (Classical.choose h).1 else (p, Phi p)
+    fun j => if h : ∃ i : t, e i = j then (Classical.choose h).val else (p, Phi p)
   have hinner_weight (i : t) :
-      (∑ j, if e i = j then weights₀ i.1 else 0) = weights₀ i.1 := by
+      (∑ j, if e i = j then weights₀ i.val else 0) = weights₀ i.val := by
     have hsingle :
-        (∑ j, if e i = j then weights₀ i.1 else 0) =
-          (if e i = e i then weights₀ i.1 else 0) := by
+        (∑ j, if e i = j then weights₀ i.val else 0) =
+          (if e i = e i then weights₀ i.val else 0) := by
       apply Finset.sum_eq_single (e i)
       · intro j _ hji
         simp [Ne.symm hji]
@@ -1095,15 +1095,15 @@ private lemma dualConvexHull_subset_barycenter_image
     apply Finset.sum_nonneg
     intro i _
     split
-    · exact hweights₀_nonneg i.1 i.2
+    · exact hweights₀_nonneg i.val i.property
     · exact le_rfl
   have hweights_sum : ∑ j, weights j = 1 := by
     calc
       (∑ j, weights j) =
-          ∑ j, ∑ i : t, if e i = j then weights₀ i.1 else 0 := rfl
-      _ = ∑ i : t, ∑ j, if e i = j then weights₀ i.1 else 0 := by
+          ∑ j, ∑ i : t, if e i = j then weights₀ i.val else 0 := rfl
+      _ = ∑ i : t, ∑ j, if e i = j then weights₀ i.val else 0 := by
         rw [Finset.sum_comm]
-      _ = ∑ i : t, weights₀ i.1 := by
+      _ = ∑ i : t, weights₀ i.val := by
         apply Finset.sum_congr rfl
         intro i _
         exact hinner_weight i
@@ -1114,21 +1114,21 @@ private lemma dualConvexHull_subset_barycenter_image
   have hpoints (j : Fin (dualHullSize (α := α) (β := β))) :
       points j ∈ dualPhiGraph S := by
     by_cases hj : ∃ i : t, e i = j
-    · rw [show points j = (Classical.choose hj).1 by simp [points, hj]]
-      exact htGraph (Classical.choose hj).2
+    · rw [show points j = (Classical.choose hj).val by simp [points, hj]]
+      exact htGraph (Classical.choose hj).property
     · rw [show points j = (p, Phi p) by simp [points, hj]]
       exact ⟨p, ⟨hp, hpS⟩, rfl⟩
   have hterm (j : Fin (dualHullSize (α := α) (β := β))) :
       weights j • points j =
-        ∑ i : t, if e i = j then weights₀ i.1 • i.1 else 0 := by
+        ∑ i : t, if e i = j then weights₀ i.val • i.val else 0 := by
     by_cases hj : ∃ i : t, e i = j
     · let i₀ : t := Classical.choose hj
       have hi₀ : e i₀ = j := Classical.choose_spec hj
-      have hweight : weights j = weights₀ i₀.1 := by
+      have hweight : weights j = weights₀ i₀.val := by
         dsimp [weights]
         have hsingle :
-            (∑ i : t, if e i = j then weights₀ i.1 else 0) =
-              (if e i₀ = j then weights₀ i₀.1 else 0) := by
+            (∑ i : t, if e i = j then weights₀ i.val else 0) =
+              (if e i₀ = j then weights₀ i₀.val else 0) := by
           apply Finset.sum_eq_single i₀
           · intro i _ hii₀
             have hei : e i ≠ j := by
@@ -1138,14 +1138,14 @@ private lemma dualConvexHull_subset_barycenter_image
           · simp only [univ_eq_attach, mem_attach, not_true_eq_false, ite_eq_right_iff,
               IsEmpty.forall_iff]
         simpa [hi₀] using hsingle
-      have hpoint : points j = i₀.1 := by
+      have hpoint : points j = i₀.val := by
         dsimp [points, i₀]
         rw [dite_eq_left hj]
       rw [hweight, hpoint]
       symm
       have hsingle :
-          (∑ i : t, if e i = j then weights₀ i.1 • i.1 else 0) =
-            (if e i₀ = j then weights₀ i₀.1 • i₀.1 else 0) := by
+          (∑ i : t, if e i = j then weights₀ i.val • i.val else 0) =
+            (if e i₀ = j then weights₀ i₀.val • i₀.val else 0) := by
         apply Finset.sum_eq_single i₀
         · intro i _ hii₀
           have hei : e i ≠ j := by
@@ -1165,18 +1165,18 @@ private lemma dualConvexHull_subset_barycenter_image
   have hbary : dualHullBarycenter (weights, points) = x := by
     calc
       dualHullBarycenter (weights, points) = ∑ j, weights j • points j := rfl
-      _ = ∑ j, ∑ i : t, if e i = j then weights₀ i.1 • i.1 else 0 := by
+      _ = ∑ j, ∑ i : t, if e i = j then weights₀ i.val • i.val else 0 := by
         apply Finset.sum_congr rfl
         intro j _
         exact hterm j
-      _ = ∑ i : t, ∑ j, if e i = j then weights₀ i.1 • i.1 else 0 := by
+      _ = ∑ i : t, ∑ j, if e i = j then weights₀ i.val • i.val else 0 := by
         rw [Finset.sum_comm]
-      _ = ∑ i : t, weights₀ i.1 • i.1 := by
+      _ = ∑ i : t, weights₀ i.val • i.val := by
         apply Finset.sum_congr rfl
         intro i _
         have hsingle :
-            (∑ j, if e i = j then weights₀ i.1 • i.1 else 0) =
-              (if e i = e i then weights₀ i.1 • i.1 else 0) := by
+            (∑ j, if e i = j then weights₀ i.val • i.val else 0) =
+              (if e i = e i then weights₀ i.val • i.val else 0) := by
           apply Finset.sum_eq_single (e i)
           · intro j _ hji
             simp [Ne.symm hji]

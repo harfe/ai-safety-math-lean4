@@ -76,7 +76,7 @@ lemma ok_mySortedActionFun : IsSortedActionFun U γ (mySortedActionFun U γ) := 
 /-- define the interval [1-q,1] as `Set unitInterval`
 -/
 def topQ (q : qSpace) : Set unitInterval :=
-  Set.Icc ⟨1 - q, ⟨sub_nonneg_of_le q.2.2, sub_le_self 1 (le_of_lt q.2.1)⟩⟩ 1
+  Set.Icc ⟨1 - q, ⟨sub_nonneg_of_le q.property.2, sub_le_self 1 (le_of_lt q.property.1)⟩⟩ 1
 
 
 
@@ -95,7 +95,7 @@ lemma ok_quantilizer (q : qSpace) :
 /-- sanity check:  the volume of `topQ q` is `q`.
 -/
 lemma volume_topQ (q : qSpace) :
-    (volume (topQ q)).toReal = q.1 := by
+    (volume (topQ q)).toReal = q.val := by
   sorry
 
 /-- sanity check:
@@ -108,9 +108,9 @@ lemma quantilizer_one_eq_gamma :
 /-- sanity check:
 smaller q leads to higher expected utility
 -/
-lemma utility_quantilizer_antitone (q1 q2 : qSpace) (hq12 : q1.1 ≤ q2.1) :
-    ∫ a, (U a).1 ∂(quantilizer U γ q2).toMeasure
-    ≤ ∫ a, (U a).1 ∂(quantilizer U γ q1).toMeasure := by
+lemma utility_quantilizer_antitone (q1 q2 : qSpace) (hq12 : q1.val ≤ q2.val) :
+    ∫ a, (U a).val ∂(quantilizer U γ q2).toMeasure
+    ≤ ∫ a, (U a).val ∂(quantilizer U γ q1).toMeasure := by
   sorry
 
 section Cost
@@ -121,7 +121,7 @@ then the expected cost with a quantilizer is at most 1 / q.
 -/
 lemma cost_bound (q : qSpace) (cost : A → NNReal)
     (hcost : ∫ a, (cost a).toReal ∂γ.toMeasure ≤ 1) :
-    ∫ a, (cost a).toReal ∂ (quantilizer U γ q).toMeasure ≤ 1 / q.1 := by
+    ∫ a, (cost a).toReal ∂ (quantilizer U γ q).toMeasure ≤ 1 / q.val := by
 
   sorry
 
@@ -152,8 +152,8 @@ theorem quantilizer_optimality (t : ℝ) (ht : 1 < t) :
     ConservativeCostConstraint γ t (quantilizer U γ (invInQSpace t ht))
     ∧ ∀ (p : ProbabilityMeasure A),
       ConservativeCostConstraint γ t p →
-      ∫ a, (U a).1 ∂p.toMeasure
-        ≤ ∫ a, (U a).1 ∂(quantilizer U γ (invInQSpace t ht)).toMeasure := by
+      ∫ a, (U a).val ∂p.toMeasure
+        ≤ ∫ a, (U a).val ∂(quantilizer U γ (invInQSpace t ht)).toMeasure := by
   sorry
 
 end Cost

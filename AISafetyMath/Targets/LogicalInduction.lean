@@ -295,7 +295,7 @@ namespace ValuationFeature
 `ValuationFeature.map'` only to initial segments.
 -/
 def map (vf : ValuationFeature ps) (V : ValuationSequence ps) : ℝ :=
-  vf.map' (fun i s => V i.1 s)
+  vf.map' (fun i s => V i.val s)
 
 
 /-- Sanity check -/
@@ -388,7 +388,7 @@ def sum {k : ℕ} (f : Fin k → Expressible ps) : Expressible ps :=
 for expressible features
 -/
 lemma rat_of_rat (e : Expressible ps) (V : ValuationSequence ps)
-    (h_rat : ∀ n s, ∃ (q : ℚ), (V n s).1 = q) :
+    (h_rat : ∀ n s, ∃ (q : ℚ), (V n s).val = q) :
     ∃ (q : ℚ), e.vf.map V = ↑q := by
   sorry
 
@@ -462,7 +462,7 @@ Also enforces that lines can only depend on earlier lines.
 structure ExpressibleFeatureProgram (ps : PrimeSentences) where
   lines : List (EFLine ps)
   nonempty : lines ≠ []
-  depends : ∀ (i : Fin lines.length), (lines.get i).depends < i.1
+  depends : ∀ (i : Fin lines.length), (lines.get i).depends < i.val
 
 namespace ExpressibleFeatureProgram
 
@@ -670,7 +670,7 @@ Note that `Finset.sum` is automatically defined for `Unit ⊕ Sentence → ℝ`.
 noncomputable
 def netHoldings (T : Trader ps) (n : ℕ) (V : ValuationSequence ps) :
     Unit ⊕ Sentence ps → ℝ :=
-  ∑ (i : Fin (n + 1)), (T.val i.1).holdings V
+  ∑ (i : Fin (n + 1)), (T.val i.val).holdings V
 
 /-- Sanity check: -/
 lemma finite_support_of_netHoldings (T : Trader ps) (n : ℕ)
@@ -739,7 +739,7 @@ there is a trader for every profit
 -/
 lemma exists_profitable_trader_of_Ioo (n : ℕ) W
     (V : ValuationSequence ps) s
-    (hV : (V n s).1 ≠ 0 ∧ (V n s).1 ≠ 1) (profit : ℚ) :
+    (hV : (V n s).val ≠ 0 ∧ (V n s).val ≠ 1) (profit : ℚ) :
     ∃ (T : Trader ps), T.worldVal W n V = ↑profit := by
   sorry
 

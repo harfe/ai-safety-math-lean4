@@ -49,24 +49,25 @@ lemma totalLoss_continuous (L : MomentaryLoss A O) (γ : discount) :
     Continuous (fun h : ℕ → A × O => totalLoss L γ h) := by
   unfold totalLoss
   refine Continuous.mul continuous_const ?_
-  refine continuous_tsum (u := fun t => γ.1 ^ t) ?_
-    (summable_geometric_of_lt_one γ.2.1 γ.2.2) ?_
+  refine continuous_tsum (u := fun t => γ.val ^ t) ?_
+    (summable_geometric_of_lt_one γ.property.1 γ.property.2) ?_
   · -- each summand is locally constant: it factors through the first `t` coordinates,
     -- a finite product of discrete spaces (hence discrete), so it is continuous.
     intro t
     refine Continuous.mul continuous_const ?_
-    have h1 : Continuous (fun h : ℕ → A × O => (fun i : Fin t => h i.1)) :=
-      continuous_pi (fun i => continuous_apply i.1)
+    have h1 : Continuous (fun h : ℕ → A × O => (fun i : Fin t => h i.val)) :=
+      continuous_pi (fun i => continuous_apply i.val)
     exact (continuous_of_discreteTopology
       (f := fun v : Fin t → A × O => ((L (List.ofFn v) : Set.Icc (0 : ℝ) 1) : ℝ))).comp h1
   · -- uniform bound by the geometric series, since `0 ≤ L ≤ 1` and `0 ≤ γ`.
     intro t h
-    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (pow_nonneg γ.2.1 t),
-      abs_of_nonneg (L (initialSegment A O h t)).2.1]
-    calc γ.1 ^ t * (L (initialSegment A O h t)).1
-        ≤ γ.1 ^ t * 1 :=
-          mul_le_mul_of_nonneg_left (L (initialSegment A O h t)).2.2 (pow_nonneg γ.2.1 t)
-      _ = γ.1 ^ t := mul_one _
+    rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (pow_nonneg γ.property.1 t),
+      abs_of_nonneg (L (initialSegment A O h t)).property.1]
+    calc γ.val ^ t * (L (initialSegment A O h t)).val
+        ≤ γ.val ^ t * 1 :=
+          mul_le_mul_of_nonneg_left (L (initialSegment A O h t)).property.2 (pow_nonneg γ.property.1
+            t)
+      _ = γ.val ^ t := mul_one _
 
 omit [Nonempty A] in
 lemma expectedTotalLoss_continuous
@@ -149,7 +150,7 @@ lemma measureAfterHist_barycentric (μ : Environment A O) (π : Policy A O) (h�
     have hk : IsMarkovKernel
         ({ toFun := fun a => (μ h a).toMeasure,
            measurable' := Measurable.of_discrete } : Kernel A O) :=
-      ⟨fun a => (μ h a).2⟩
+      ⟨fun a => (μ h a).property⟩
     have hprod : ({(a', o')} : Set (A × O)) = {a'} ×ˢ {o'} := by
       ext ⟨a, o⟩; simp [Prod.ext_iff]
     rw [measureAfterHist, hprod,
@@ -165,7 +166,7 @@ lemma measureAfterHist_barycentric (μ : Environment A O) (π : Policy A O) (h�
     exact measure_univ
   apply Measure.ext_of_singleton
   rintro ⟨a', o'⟩
-  rw [Measure.finsetSum_apply, key π a' o']
+  rw [sum_apply, key π a' o']
   -- Pull the (Policy-independent) Environment factor `μ h a' {o'}` out of the finite sum.
   have hfac : ∀ x : A,
       (((π h₀ {x} : ℝ≥0) : ℝ≥0∞) • measureAfterHist
@@ -173,7 +174,7 @@ lemma measureAfterHist_barycentric (μ : Environment A O) (π : Policy A O) (h�
         = ((μ h a' : Measure O) {o'}) * (((π h₀ {x} : ℝ≥0) : ℝ≥0∞) *
             (((Function.update π h₀ ⟨Measure.dirac x, inferInstance⟩) h {a'} : ℝ≥0) : ℝ≥0∞)) := by
     intro x
-    rw [Measure.smul_apply]; unfold Policy at key; rw [key _ a' o', smul_eq_mul]; ring
+    rw [smul_apply]; unfold Policy at key; rw [key _ a' o', smul_eq_mul]; ring
   simp_rw [hfac, ← Finset.mul_sum]
   congr 1
   by_cases hh : h = h₀
@@ -234,7 +235,8 @@ lemma traj_marginal_singleton_zero (μ : Environment A O) (π : Policy A O)
   · intro hx; rw [← hx, huniq, uniqueElim_default]
   · intro hx; funext i
     rw [show i = ⟨0, Finset.mem_Iic.mpr le_rfl⟩ from
-      Subtype.ext (Nat.le_zero.mp (Finset.mem_Iic.mp i.2)), huniq, uniqueElim_default, hx, huniq]
+      Subtype.ext (Nat.le_zero.mp (Finset.mem_Iic.mp i.property)), huniq, uniqueElim_default, hx,
+        huniq]
 
 omit [Nonempty A] [TopologicalSpace A] [DiscreteTopology A] [BorelSpace A]
   [TopologicalSpace O] [DiscreteTopology O] [BorelSpace O] in
@@ -264,9 +266,9 @@ lemma traj_marginal_singleton_succ (μ : Environment A O) (π : Policy A O) (k :
       simp only [Function.comp_apply, hx]
     · rintro ⟨h1, h2⟩
       funext i
-      rcases eq_or_lt_of_le (Finset.mem_Iic.mp i.2) with hi | hi
+      rcases eq_or_lt_of_le (Finset.mem_Iic.mp i.property) with hi | hi
       · rw [show i = ⟨k + 1, Finset.mem_Iic.mpr le_rfl⟩ from Subtype.ext hi]; exact h2
-      · have := congrFun h1 ⟨i.1, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp hi)⟩
+      · have := congrFun h1 ⟨i.val, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp hi)⟩
         simpa only [Preorder.frestrictLe_apply, Preorder.frestrictLe₂_apply] using this
   rw [trajectoryMeasure,
     Measure.map_apply (Preorder.measurable_frestrictLe _) (measurableSet_singleton _), hset,
@@ -329,11 +331,11 @@ lemma traj_marginal_barycentric (μ : Environment A O) (π : Policy A O) (h₀ :
   | zero =>
     intro ω
     rw [traj_marginal_singleton_zero, measureAfterHist_barycentric μ π h₀ List.nil,
-      Measure.finsetSum_apply]
+      sum_apply]
     refine Finset.sum_congr rfl (fun a _ => ?_)
     have e := traj_marginal_singleton_zero μ
       (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) ω
-    rw [Measure.smul_apply, smul_eq_mul, e]
+    rw [smul_apply, smul_eq_mul, e]
   | succ k ih =>
     intro ω
     simp only [traj_marginal_singleton_succ]
@@ -353,8 +355,8 @@ lemma traj_marginal_barycentric (μ : Environment A O) (π : Policy A O) (h₀ :
           = ∑ a : A, ((π h₀ {a} : ℝ≥0) : ℝ≥0∞) *
               (measureAfterHist (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ Hk)
                 {z} := by
-        rw [measureAfterHist_barycentric μ π h₀ Hk, Measure.finsetSum_apply]
-        exact Finset.sum_congr rfl (fun a _ => by rw [Measure.smul_apply, smul_eq_mul])
+        rw [measureAfterHist_barycentric μ π h₀ Hk, sum_apply]
+        exact Finset.sum_congr rfl (fun a _ => by rw [smul_apply, smul_eq_mul])
       rw [hbar, Finset.mul_sum]
       have hsucc : ∀ a : A, (Measure.map (Preorder.frestrictLe (k + 1))
           (trajectoryMeasure (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ)) {ω}
@@ -451,9 +453,9 @@ lemma trajectoryMeasure_barycentric (μ : Environment A O) (π : Policy A O) (h�
             ((trajectoryMeasure (Function.update π h₀ ⟨Measure.dirac a, inferInstance⟩) μ).map
                 (Preorder.frestrictLe n)) {ω} := by
       rw [Measure.map_apply (Preorder.measurable_frestrictLe n) (measurableSet_singleton _), hν,
-        Measure.finsetSum_apply]
+        sum_apply]
       refine Finset.sum_congr rfl (fun a _ => ?_)
-      rw [Measure.smul_apply, smul_eq_mul,
+      rw [smul_apply, smul_eq_mul,
         Measure.map_apply (Preorder.measurable_frestrictLe n) (measurableSet_singleton _)]
     rw [hLHS]
     exact (traj_marginal_barycentric μ π h₀ n ω).symm
@@ -790,9 +792,9 @@ lemma discount_atTop :
   · rw [Set.mem_Ico]
     exact ⟨le_max_left _ _, max_lt (by norm_num) (by linarith)⟩
   · intro x hx
-    have hxval : max 0 (1 - ε / 2) ≤ x.1 := hx
-    have hx1 : x.1 < 1 := x.2.2
-    have h2 : 1 - ε / 2 ≤ x.1 := le_trans (le_max_right _ _) hxval
+    have hxval : max 0 (1 - ε / 2) ≤ x.val := hx
+    have hx1 : x.val < 1 := x.property.2
+    have h2 : 1 - ε / 2 ≤ x.val := le_trans (le_max_right _ _) hxval
     rw [Real.dist_eq, abs_of_nonpos (by linarith), neg_sub]
     linarith
 

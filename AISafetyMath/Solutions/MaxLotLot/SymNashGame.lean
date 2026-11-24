@@ -8,8 +8,6 @@ public import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
 public import Mathlib.MeasureTheory.Measure.Prokhorov
 public import Mathlib.Order.CompletePartialOrder
 
-set_option linter.style.header false
-
 /-!
 # Symmetric Nash games
 
@@ -39,14 +37,14 @@ variable {D : Type*}
 variable [MeasurableSpace D]
 variable (f : D × D → ℝ)
 
-def Dominates (A B : ProbabilityMeasure D) : Prop := ∫ x, f x ∂(A.prod B).1 ≥ 0
+def Dominates (A B : ProbabilityMeasure D) : Prop := ∫ x, f x ∂(A.prod B).val ≥ 0
 
 /-- sanity check -/
 lemma integrable_of_meas_bounded (hmeas : Measurable f)
     (hbound : ∃ (cc : ℝ), ∀ x, abs (f x) < cc)
     (A B : ProbabilityMeasure D) :
-    Integrable f (A.prod B).1 := by
-  have : IsProbabilityMeasure (A.prod B).1 := (A.prod B).2
+    Integrable f (A.prod B).val := by
+  have : IsProbabilityMeasure (A.prod B).val := (A.prod B).property
   obtain ⟨cc, hcc⟩ := hbound
   exact Integrable.of_bound hmeas.aestronglyMeasurable cc
     (Filter.Eventually.of_forall fun x => (hcc x).le)
@@ -190,18 +188,18 @@ lemma exists_finite_witness [Nonempty D] {f : D × D → ℝ} (hcont : Continuou
     exact ⟨⟨Measure.dirac d, inferInstance⟩, by simp only [Finset.notMem_empty,
         ProbabilityMeasure.coe_mk, IsEmpty.forall_iff, implies_true]⟩
   have : Nonempty u := hu.to_subtype
-  obtain ⟨x, hx, hxj⟩ := exists_simplex_nonneg (ι := u) (fun i j => f (i.1, j.1))
+  obtain ⟨x, hx, hxj⟩ := exists_simplex_nonneg (ι := u) (fun i j => f (i.val, j.val))
     fun i j => hzerosum _ _
-  let μ : Measure D := ∑ i : u, ENNReal.ofReal (x i) • Measure.dirac i.1
+  let μ : Measure D := ∑ i : u, ENNReal.ofReal (x i) • Measure.dirac i.val
   have hμ : IsProbabilityMeasure μ := ⟨by
-    simp only [μ, Measure.coe_finsetSum, Finset.sum_apply, Measure.smul_apply, measure_univ,
+    simp only [μ, FunLike.coe_sum, Finset.sum_apply, smul_apply, measure_univ,
       smul_eq_mul, mul_one]
     rw [← ENNReal.ofReal_sum_of_nonneg fun i _ => hx.1 i, hx.2, ENNReal.ofReal_one]⟩
   refine ⟨⟨μ, hμ⟩, fun b hb => ?_⟩
   have hsm : StronglyMeasurable fun a => f (a, b) := (by fun_prop : Continuous _).stronglyMeasurable
-  have key : ∫ a, f (a, b) ∂μ = ∑ i : u, x i * f (i.1, b) := by
+  have key : ∫ a, f (a, b) ∂μ = ∑ i : u, x i * f (i.val, b) := by
     simp only [μ]
-    rw [integral_finsetSum_measure fun i _ => (integrable_dirac' hsm enorm_lt_top
+    rw [integral_finsetSum_measure fun i _ => (integrable_dirac' hsm eNorm_lt_top
       ).smul_measure ENNReal.ofReal_ne_top]
     refine Finset.sum_congr rfl fun i _ => ?_
     rw [integral_smul_measure, integral_dirac' _ _ hsm, ENNReal.toReal_ofReal (hx.1 i),
@@ -239,7 +237,7 @@ continuous `f` need not be measurable for the product σ-algebra. -/
 lemma dominates_of_forall_nonneg {M : ProbabilityMeasure D}
     (hM : ∀ b, 0 ≤ ∫ a, f (a, b) ∂M) (L : ProbabilityMeasure D) : Dominates f M L := by
   unfold Dominates
-  by_cases hi : Integrable f (M.prod L).1
+  by_cases hi : Integrable f (M.prod L).val
   · have hi' : Integrable f ((M : Measure D).prod (L : Measure D)) := hi
     change 0 ≤ ∫ x, f x ∂(M : Measure D).prod (L : Measure D)
     rw [integral_prod_symm f hi']

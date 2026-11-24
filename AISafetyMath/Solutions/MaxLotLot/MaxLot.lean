@@ -4,8 +4,6 @@ public import Mathlib.Topology.Connected.Separation
 public import Mathlib.Topology.Separation.CompletelyRegular
 public import AISafetyMath.Solutions.MaxLotLot.SymNashGame
 
-set_option linter.style.header false
-
 /-!
 # Maximal lotteries over candidates `C`
 

@@ -3,8 +3,6 @@ module
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
 public import Mathlib.Probability.Notation
 
-set_option linter.style.header false
-
 /-!
 # Maximal lottery-lotteries: definitions and the conjectures
 
@@ -54,8 +52,8 @@ lemma measurable_integral_eval {X : Type*} [MeasurableSpace X] [MeasurableSingle
     Measurable.smul (f := fun x => (A x : Measure C).real {c})
     (g := fun x => ((f x c : unitInterval) : ℝ)) ?_ ?_
   · exact (Measure.measurable_coe (measurableSet_singleton c)).ennreal_toReal.comp
-      (measurable_subtype_coe.comp hA)
-  · exact measurable_subtype_coe.comp ((measurable_pi_apply c).comp hf)
+      (measurable_subtypeVal.comp hA)
+  · exact measurable_subtypeVal.comp ((measurable_pi_apply c).comp hf)
 
 lemma prefer_measurable : MeasurableSet (prefer_set (C := C)) := by
   exact measurableSet_lt (measurable_integral_eval (by fun_prop) (by fun_prop))

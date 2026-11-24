@@ -113,13 +113,13 @@ private noncomputable def groupedWithinWinner {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (ε : D.L.ι → ℝ) (c : K.κ) :
     clusterFiber K c :=
   Classical.choose (Finite.exists_max fun u : clusterFiber K c =>
-    Real.log (D.L.prior u.1 / K.s c) + ε u.1)
+    Real.log (D.L.prior u.val / K.s c) + ε u.val)
 
 /-- The grouped Gumbel `G̃_c = max_{ℓ∈c}(log π_{ℓ|c}+ε_ℓ)`. -/
 private noncomputable def groupedG {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (ε : D.L.ι → ℝ) (c : K.κ) : ℝ :=
-  Real.log (D.L.prior (groupedWithinWinner K ε c).1 / K.s c) +
-    ε (groupedWithinWinner K ε c).1
+  Real.log (D.L.prior (groupedWithinWinner K ε c).val / K.s c) +
+    ε (groupedWithinWinner K ε c).val
 
 /-- The within-cluster exponential excess coordinates
 `e_u / π_{u|c} - min_v (e_v / π_{v|c})`.  The zero coordinate records the
@@ -127,7 +127,7 @@ winner; together with `groupedG` these recover the original seed. -/
 private noncomputable def groupedResidual {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (ε : D.L.ι → ℝ)
     (c : K.κ) (u : clusterFiber K c) : ℝ :=
-  Real.exp (-(Real.log (D.L.prior u.1 / K.s c) + ε u.1)) -
+  Real.exp (-(Real.log (D.L.prior u.val / K.s c) + ε u.val)) -
     Real.exp (-(groupedG K ε c))
 
 /-- The cluster winner for a grouped seed. -/
@@ -143,7 +143,7 @@ private noncomputable def groupedLabelWinner {p : α × β → ℝ}
     (z : α × β) : D.L.ι :=
   if z ∈ support p then
     (groupedWithinWinner K ε
-      (groupedClusterWinner K (groupedG K ε) z)).1
+      (groupedClusterWinner K (groupedG K ε) z)).val
   else winner D ε z
 
 /-- The grouped-Gumbel law conditioned on cluster `b` winning at `z`. -/
@@ -185,7 +185,7 @@ private noncomputable def losingClockLaw {p : α × β → ℝ}
     (u : ℝ) : Measure (losingIndex K b → ℝ) :=
   Measure.pi fun c : losingIndex K b =>
     (expMeasure 1).map
-      (fun e => u * (K.sigma c.1 z / K.sigma b z) + e)
+      (fun e => u * (K.sigma c.val z / K.sigma b z) + e)
 
 private noncomputable def losingReference {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (b : K.κ) :
@@ -520,11 +520,11 @@ private theorem isFiniteMeasure_finset_mixture
     IsFiniteMeasure (∑ i, ENNReal.ofReal (r i) • μ i) := by
   constructor
   rw [show (∑ i, ENNReal.ofReal (r i) • μ i) Set.univ =
-      ∑ i, (ENNReal.ofReal (r i) • μ i) Set.univ by simp only [Measure.coe_finsetSum,
-          Measure.coe_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Measure.smul_apply]]
+      ∑ i, (ENNReal.ofReal (r i) • μ i) Set.univ by simp only [FunLike.coe_sum,
+          FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, smul_apply]]
   rw [ENNReal.sum_lt_top]
   intro i _
-  rw [Measure.smul_apply, smul_eq_mul]
+  rw [smul_apply, smul_eq_mul]
   by_cases hr : r i = 0
   · simp [hr]
   · exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (hfinite i hr)
@@ -638,7 +638,7 @@ private theorem seedWinner_klDiv_ne_top {p : α × β → ℝ}
   let : IsFiniteMeasure (seedLawGivenWinner D a z) := by
     constructor
     unfold seedLawGivenWinner
-    rw [ite_eq_right hpostNe, Measure.smul_apply, smul_eq_mul]
+    rw [ite_eq_right hpostNe, smul_apply, smul_eq_mul]
     exact ENNReal.mul_lt_top
       (ENNReal.inv_lt_top.mpr (ENNReal.ofReal_pos.mpr hpost))
       (measure_lt_top _ _)
@@ -659,7 +659,7 @@ private theorem seedWinner_klDiv_ne_top {p : α × β → ℝ}
     have hpost' : 0 < D.post a z' :=
       lt_of_le_of_ne (racePost_nonneg D a z') (Ne.symm hpostNe')
     unfold seedLawGivenWinner
-    rw [ite_eq_right hpostNe', Measure.smul_apply, smul_eq_mul]
+    rw [ite_eq_right hpostNe', smul_apply, smul_eq_mul]
     exact ENNReal.mul_lt_top
       (ENNReal.inv_lt_top.mpr (ENNReal.ofReal_pos.mpr hpost'))
       (measure_lt_top _ _)
@@ -701,7 +701,7 @@ private theorem clusterSeed_klDiv_ne_top {p : α × β → ℝ}
   let : IsFiniteMeasure (clusterSeedLawGivenWinner K b z) := by
     constructor
     unfold clusterSeedLawGivenWinner
-    rw [ite_eq_right hsigma.ne', Measure.smul_apply, smul_eq_mul]
+    rw [ite_eq_right hsigma.ne', smul_apply, smul_eq_mul]
     exact ENNReal.mul_lt_top
       (ENNReal.inv_lt_top.mpr (ENNReal.ofReal_pos.mpr hsigma))
       (measure_lt_top _ _)
@@ -719,7 +719,7 @@ private theorem clusterSeed_klDiv_ne_top {p : α × β → ℝ}
       lt_of_le_of_ne (raceSigma_nonneg K b z')
         (Ne.symm (mul_ne_zero_iff.mp hnum).2)
     unfold clusterSeedLawGivenWinner
-    rw [ite_eq_right hsigma'.ne', Measure.smul_apply, smul_eq_mul]
+    rw [ite_eq_right hsigma'.ne', smul_apply, smul_eq_mul]
     exact ENNReal.mul_lt_top
       (ENNReal.inv_lt_top.mpr (ENNReal.ofReal_pos.mpr hsigma'))
       (measure_lt_top _ _)
@@ -745,7 +745,7 @@ private theorem losingClockLaw_isProbability {p : α × β → ℝ}
     isProbabilityMeasure_expMeasure zero_lt_one
   let (c : losingIndex K b) : IsProbabilityMeasure
       ((expMeasure 1).map
-        (fun e => u * (K.sigma c.1 z / K.sigma b z) + e)) := by
+        (fun e => u * (K.sigma c.val z / K.sigma b z) + e)) := by
     exact (Measure.isProbabilityMeasure_map_iff
       (measurable_const.add measurable_id).aemeasurable).2 inferInstance
   unfold losingClockLaw
@@ -989,7 +989,7 @@ private lemma seedLaw_weightedLexWinner_measure
   calc
     clockLaw κ (F ⁻¹' {G | weightedLexWinner t G = a}) =
         clockLaw κ {E | strictClockWin t a E} :=
-      measure_congr (hae.mono fun E h => propext h)
+      measure_congr hae
     _ = ENNReal.ofReal (t a) := by
       unfold clockLaw
       exact pi_exp_strictClockWin t ht htotal a
@@ -1008,7 +1008,7 @@ private theorem weightedWinner_probability_measure
   calc
     seedLaw κ {G | weightedWinner t G = a} =
         seedLaw κ {G | weightedLexWinner t G = a} :=
-      measure_congr (hae.mono fun G h => propext h)
+      measure_congr hae
     _ = ENNReal.ofReal (t a) :=
       seedLaw_weightedLexWinner_measure t ht htotal a
 
@@ -1030,7 +1030,7 @@ private theorem label_winner_probability_measure {p : α × β → ℝ}
   calc
     seedLaw D.L.ι {ε | winner D ε z = a} =
         seedLaw D.L.ι {ε | lexWinner D ε z = a} :=
-      measure_congr (hae.mono fun ε h => propext h)
+      measure_congr hae
     _ = ENNReal.ofReal (D.post a z) :=
       seedLaw_lexWinner_measure D z hp a
 
@@ -1156,7 +1156,7 @@ private lemma map_sub_restrict_expMeasure_one {a : ℝ} (ha : 0 ≤ a) :
     constructor <;> intro h <;> linarith
   rw [Measure.map_apply (by fun_prop) measurableSet_Iic, hpre,
     Measure.restrict_apply measurableSet_Iic,
-    Measure.smul_apply, smul_eq_mul]
+    smul_apply, smul_eq_mul]
   by_cases hx : 0 ≤ x
   · have hxa : a ≤ x + a := by linarith
     have hxapos : 0 ≤ x + a := ha.trans hxa
@@ -1220,7 +1220,7 @@ private lemma map_scaled_excess_restrict_expMeasure_one
 private noncomputable def weightedLosingExcessLaw
     {κ : Type} [Fintype κ] [DecidableEq κ]
     (t : κ → ℝ) (a : κ) : Measure ({i : κ // i ≠ a} → ℝ) :=
-  Measure.pi fun i : {i : κ // i ≠ a} => expMeasure (t i.1)
+  Measure.pi fun i : {i : κ // i ≠ a} => expMeasure (t i.val)
 
 private lemma map_losing_scaled_excess
     {κ : Type} [Fintype κ] [DecidableEq κ]
@@ -1228,55 +1228,55 @@ private lemma map_losing_scaled_excess
     {u : ℝ} (hu : 0 ≤ u) :
     Measure.map
         (fun E : {i : κ // i ≠ a} → ℝ =>
-          fun i => E i / t i.1 - u)
+          fun i => E i / t i.val - u)
         ((Measure.pi (fun _ : {i : κ // i ≠ a} => expMeasure 1)).restrict
           (Set.pi Set.univ
-            (fun i : {i : κ // i ≠ a} => Set.Ioi (t i.1 * u)))) =
+            (fun i : {i : κ // i ≠ a} => Set.Ioi (t i.val * u)))) =
       (∏ i : {i : κ // i ≠ a},
-          ENNReal.ofReal (Real.exp (-(t i.1 * u)))) •
+          ENNReal.ofReal (Real.exp (-(t i.val * u)))) •
         weightedLosingExcessLaw t a := by
   let d : {i : κ // i ≠ a} → ℝ≥0∞ := fun i =>
-    ENNReal.ofReal (Real.exp (-(t i.1 * u)))
+    ENNReal.ofReal (Real.exp (-(t i.val * u)))
   let : IsProbabilityMeasure (expMeasure 1) :=
     isProbabilityMeasure_expMeasure zero_lt_one
   let (i : {i : κ // i ≠ a}) : IsProbabilityMeasure
-      (expMeasure (t i.1)) := isProbabilityMeasure_expMeasure (ht i.1)
+      (expMeasure (t i.val)) := isProbabilityMeasure_expMeasure (ht i.val)
   have hmap :
       Measure.map
           (fun E : {i : κ // i ≠ a} → ℝ =>
-            fun i => E i / t i.1 - u)
+            fun i => E i / t i.val - u)
           (Measure.pi (fun i : {i : κ // i ≠ a} =>
-            (expMeasure 1).restrict (Set.Ioi (t i.1 * u)))) =
+            (expMeasure 1).restrict (Set.Ioi (t i.val * u)))) =
         Measure.pi (fun i : {i : κ // i ≠ a} =>
-          Measure.map (fun x : ℝ => x / t i.1 - u)
-            ((expMeasure 1).restrict (Set.Ioi (t i.1 * u)))) := by
+          Measure.map (fun x : ℝ => x / t i.val - u)
+            ((expMeasure 1).restrict (Set.Ioi (t i.val * u)))) := by
     exact Measure.pi_map_pi fun (i : {i : κ // i ≠ a}) =>
-      ((measurable_id.div_const (t i.1)).sub_const u).aemeasurable
+      ((measurable_id.div_const (t i.val)).sub_const u).aemeasurable
   have hcoord (i : {i : κ // i ≠ a}) :
-      Measure.map (fun x : ℝ => x / t i.1 - u)
-          ((expMeasure 1).restrict (Set.Ioi (t i.1 * u))) =
-        d i • expMeasure (t i.1) := by
-    exact map_scaled_excess_restrict_expMeasure_one (ht i.1) hu
+      Measure.map (fun x : ℝ => x / t i.val - u)
+          ((expMeasure 1).restrict (Set.Ioi (t i.val * u))) =
+        d i • expMeasure (t i.val) := by
+    exact map_scaled_excess_restrict_expMeasure_one (ht i.val) hu
   let (i : {i : κ // i ≠ a}) : IsFiniteMeasure
-      (d i • expMeasure (t i.1)) := ⟨by simp [d]⟩
+      (d i • expMeasure (t i.val)) := ⟨by simp [d]⟩
   have hscaled :
       Measure.pi (fun i : {i : κ // i ≠ a} =>
-          d i • expMeasure (t i.1)) =
+          d i • expMeasure (t i.val)) =
         (∏ i : {i : κ // i ≠ a}, d i) •
           weightedLosingExcessLaw t a := by
     unfold weightedLosingExcessLaw
     apply Measure.pi_eq
     intro s hs
-    rw [Measure.smul_apply, smul_eq_mul, Measure.pi_pi]
-    simp_rw [Measure.smul_apply, smul_eq_mul]
+    rw [smul_apply, smul_eq_mul, Measure.pi_pi]
+    simp_rw [smul_apply, smul_eq_mul]
     rw [Finset.prod_mul_distrib]
   rw [Measure.restrict_pi_pi, hmap]
   calc
     Measure.pi (fun i : {i : κ // i ≠ a} =>
-        Measure.map (fun x : ℝ => x / t i.1 - u)
-          ((expMeasure 1).restrict (Set.Ioi (t i.1 * u)))) =
+        Measure.map (fun x : ℝ => x / t i.val - u)
+          ((expMeasure 1).restrict (Set.Ioi (t i.val * u)))) =
         Measure.pi (fun i : {i : κ // i ≠ a} =>
-          d i • expMeasure (t i.1)) := by
+          d i • expMeasure (t i.val)) := by
       congr 1
       funext i
       exact hcoord i
@@ -1335,17 +1335,17 @@ private lemma map_eval_restrict_strictClockWin
       (fun x : {i : κ // i ≠ a} → ℝ => (x, y)) ⁻¹'
           ((g ∘ f) ⁻¹' {E : κ → ℝ | strictClockWin t a E}) =
         Set.pi Set.univ
-          (fun i : {i : κ // i ≠ a} => Set.Ioi (t i.1 / t a * y)) := by
+          (fun i : {i : κ // i ≠ a} => Set.Ioi (t i.val / t a * y)) := by
     ext x
     have hf_pair := (MeasurableEquiv.piOptionEquivProd
       (fun _ : Option {i : κ // i ≠ a} => ℝ)).apply_symm_apply (x, y)
     have hf_some (i : {i : κ // i ≠ a}) : f (x, y) (some i) = x i :=
       congrFun (congrArg Prod.fst hf_pair) i
     have hf_none : f (x, y) none = y := congrArg Prod.snd hf_pair
-    have he_i (i : {i : κ // i ≠ a}) : (g (f (x, y))) i.1 = x i := by
+    have he_i (i : {i : κ // i ≠ a}) : (g (f (x, y))) i.val = x i := by
       dsimp [g]
       rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply]
-      simp [e, Equiv.optionSubtypeNe_symm_of_ne i.2, hf_some]
+      simp [e, Equiv.optionSubtypeNe_symm_of_ne i.property, hf_some]
     have he_a : (g (f (x, y))) a = y := by
       dsimp [g]
       rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply]
@@ -1354,12 +1354,12 @@ private lemma map_eval_restrict_strictClockWin
       true_implies, Set.mem_Ioi]
     constructor
     · intro h i
-      have hrel := h i.1 i.2
-      change g (f (x, y)) a / t a < g (f (x, y)) i.1 / t i.1 at hrel
+      have hrel := h i.val i.property
+      change g (f (x, y)) a / t a < g (f (x, y)) i.val / t i.val at hrel
       rw [he_a, he_i] at hrel
-      have hcross : y * t i.1 < x i * t a :=
-        (div_lt_div_iff₀ (ht a) (ht i.1)).1 hrel
-      have hdiv : t i.1 * y / t a < x i :=
+      have hcross : y * t i.val < x i * t a :=
+        (div_lt_div_iff₀ (ht a) (ht i.val)).1 hrel
+      have hdiv : t i.val * y / t a < x i :=
         (div_lt_iff₀ (ht a)).2 (by nlinarith)
       simpa [div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm] using hdiv
     · intro h b hba
@@ -1377,9 +1377,9 @@ private lemma map_eval_restrict_strictClockWin
       rw [he_a, hib]
       exact (div_lt_div_iff₀ (ht a) (ht b)).2 hcross
   have hsplit := Fintype.sum_eq_add_sum_subtype_ne t a
-  have hsubsum : (∑ i : {i : κ // i ≠ a}, t i.1) = 1 - t a := by
+  have hsubsum : (∑ i : {i : κ // i ≠ a}, t i.val) = 1 - t a := by
     linarith
-  have hratio : (∑ i : {i : κ // i ≠ a}, t i.1 / t a) =
+  have hratio : (∑ i : {i : κ // i ≠ a}, t i.val / t a) =
       1 / t a - 1 := by
     rw [← Finset.sum_div, hsubsum]
     field_simp [(ht a).ne']
@@ -1389,13 +1389,13 @@ private lemma map_eval_restrict_strictClockWin
     simpa only [Set.mem_Iic, not_le] using hy
   have hprod : ∀ᵐ y : ℝ ∂(expMeasure 1),
       (∏ i : {i : κ // i ≠ a},
-          expMeasure 1 (Set.Ioi (t i.1 / t a * y))) =
+          expMeasure 1 (Set.Ioi (t i.val / t a * y))) =
         ENNReal.ofReal (Real.exp (-((1 / t a - 1) * y))) := by
     filter_upwards [hypos] with y hy
     simp_rw [expMeasure_one_Ioi _
       (mul_nonneg (div_nonneg (ht _).le (ht a).le) hy.le)]
     rw [← ENNReal.ofReal_prod_of_nonneg
-      (fun i _ => Real.exp_nonneg (-(t i.1 / t a * y))), ← Real.exp_sum]
+      (fun i _ => Real.exp_nonneg (-(t i.val / t a * y))), ← Real.exp_sum]
     congr 2
     rw [Finset.sum_neg_distrib, ← Finset.sum_mul, hratio]
   have hclock :
@@ -1440,7 +1440,7 @@ private lemma map_eval_restrict_strictClockWin
                     {E : κ → ℝ | strictClockWin t a E}) =
               Set.pi Set.univ
                 (fun i : {i : κ // i ≠ a} =>
-                  Set.Ioi (t i.1 / t a * y)) := by
+                  Set.Ioi (t i.val / t a * y)) := by
             ext x
             simp only [Set.mem_preimage, Set.mem_inter_iff]
             have hmem :
@@ -1448,7 +1448,7 @@ private lemma map_eval_restrict_strictClockWin
                     {E : κ → ℝ | strictClockWin t a E} ↔
                   x ∈ Set.pi Set.univ
                     (fun i : {i : κ // i ≠ a} =>
-                      Set.Ioi (t i.1 / t a * y)) :=
+                      Set.Ioi (t i.val / t a * y)) :=
               Set.ext_iff.mp (hsectionWin y) x
             simpa only [hys, true_and] using hmem
         rw [hsec, Measure.pi_pi, hpy, Set.indicator_of_mem hys]
@@ -1494,7 +1494,6 @@ private lemma weightedWinner_clock_law
       {G | weightedWinner t G = a} =ᵐ[seedLaw κ]
         {G | weightedLexWinner t G = a} := by
     filter_upwards [weightedWinner_ae_eq_lex t] with G hG
-    apply propext
     rw [hG]
   have hone : ∀ᵐ x : ℝ ∂(expMeasure 1), 0 < x := by
     have hnot := measure_eq_zero_iff_ae_notMem.mp expMeasure_one_Iic_zero
@@ -1514,7 +1513,6 @@ private lemma weightedWinner_clock_law
       F ⁻¹' {G | weightedLexWinner t G = a} =ᵐ[clockLaw κ]
         {E | strictClockWin t a E} := by
     filter_upwards [hpos, htieClock] with E hE htie
-    apply propext
     change (weightedLexWinner t (F E) = a ↔ strictClockWin t a E)
     exact weightedLexWinner_clock_iff t ht E hE a
       (fun b hba => htie b a hba)
@@ -1603,7 +1601,7 @@ private theorem clock_min_excess_restrict_factorization
   let : IsProbabilityMeasure (expMeasure 1) :=
     isProbabilityMeasure_expMeasure zero_lt_one
   let (i : {i : κ // i ≠ a}) : IsProbabilityMeasure
-      (expMeasure (t i.1)) := isProbabilityMeasure_expMeasure (ht i.1)
+      (expMeasure (t i.val)) := isProbabilityMeasure_expMeasure (ht i.val)
   let e : Option {i : κ // i ≠ a} ≃ κ := Equiv.optionSubtypeNe a
   let f := (MeasurableEquiv.piOptionEquivProd
     (fun _ : Option {i : κ // i ≠ a} => ℝ)).symm
@@ -1615,7 +1613,7 @@ private theorem clock_min_excess_restrict_factorization
   let J : (({i : κ // i ≠ a} → ℝ) × ℝ) → ℝ × (κ → ℝ) :=
     fun xy =>
       (xy.2 / t a,
-        insertWinnerZero a (fun i => xy.1 i / t i.1 - xy.2 / t a))
+        insertWinnerZero a (fun i => xy.1 i / t i.val - xy.2 / t a))
   have hfirst :
       Measure.map f q =
         Measure.pi (fun _ : Option {i : κ // i ≠ a} => expMeasure 1) := by
@@ -1644,14 +1642,14 @@ private theorem clock_min_excess_restrict_factorization
     rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply]
     simp [e, hfNone]
   have hcoordNe (xy : ({i : κ // i ≠ a} → ℝ) × ℝ)
-      (i : {i : κ // i ≠ a}) : (g (f xy)) i.1 = xy.1 i := by
+      (i : {i : κ // i ≠ a}) : (g (f xy)) i.val = xy.1 i := by
     have hfPair := (MeasurableEquiv.piOptionEquivProd
       (fun _ : Option {i : κ // i ≠ a} => ℝ)).apply_symm_apply xy
     have hfSome : f xy (some i) = xy.1 i :=
       congrFun (congrArg Prod.fst hfPair) i
     dsimp [g]
     rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply]
-    simp [e, Equiv.optionSubtypeNe_symm_of_ne i.2, hfSome]
+    simp [e, Equiv.optionSubtypeNe_symm_of_ne i.property, hfSome]
   have hwin : MeasurableSet {E : κ → ℝ | strictClockWin t a E} := by
     unfold strictClockWin
     measurability
@@ -1661,18 +1659,18 @@ private theorem clock_min_excess_restrict_factorization
       (fun x : {i : κ // i ≠ a} → ℝ => (x, y)) ⁻¹' P =
         Set.pi Set.univ
           (fun i : {i : κ // i ≠ a} =>
-            Set.Ioi (t i.1 / t a * y)) := by
+            Set.Ioi (t i.val / t a * y)) := by
     ext x
     simp only [P, Set.mem_preimage, Set.mem_ofPred_eq, strictClockWin,
       Set.mem_pi, Set.mem_univ, true_implies, Function.comp_apply,
       Set.mem_Ioi]
     constructor
     · intro h i
-      have hrel := h i.1 i.2
+      have hrel := h i.val i.property
       rw [hcoordA, hcoordNe (x, y) i] at hrel
-      have hcross : y * t i.1 < x i * t a :=
-        (div_lt_div_iff₀ (ht a) (ht i.1)).1 hrel
-      have hdiv : t i.1 * y / t a < x i :=
+      have hcross : y * t i.val < x i * t a :=
+        (div_lt_div_iff₀ (ht a) (ht i.val)).1 hrel
+      have hdiv : t i.val * y / t a < x i :=
         (div_lt_iff₀ (ht a)).2 (by nlinarith)
       simpa [div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm] using hdiv
     · intro h b hba
@@ -1691,13 +1689,13 @@ private theorem clock_min_excess_restrict_factorization
         (fun xy : ({i : κ // i ≠ a} → ℝ) × ℝ => xy.2) := measurable_snd
     have hlose : Measurable
         (fun xy : ({i : κ // i ≠ a} → ℝ) × ℝ =>
-          fun i => xy.1 i / t i.1 - xy.2 / t a) := by
+          fun i => xy.1 i / t i.val - xy.2 / t a) := by
       apply Measurable.of_eval
       intro i
       have hxi : Measurable
           (fun xy : ({i : κ // i ≠ a} → ℝ) × ℝ => xy.1 i) :=
         (measurable_pi_apply i).comp measurable_fst
-      exact (hxi.div_const (t i.1)).sub (hy.div_const (t a))
+      exact (hxi.div_const (t i.val)).sub (hy.div_const (t a))
     apply Measurable.prodMk
     · exact hy.div_const (t a)
     · exact (insertWinnerZero_measurable a).comp hlose
@@ -1812,10 +1810,10 @@ private theorem clock_min_excess_restrict_factorization
     · let u : ℝ := y / t a
       let loseMap : ({i : κ // i ≠ a} → ℝ) →
           ({i : κ // i ≠ a} → ℝ) :=
-        fun x i => x i / t i.1 - u
+        fun x i => x i / t i.val - u
       let orth : Set ({i : κ // i ≠ a} → ℝ) :=
         Set.pi Set.univ
-          (fun i : {i : κ // i ≠ a} => Set.Ioi (t i.1 * u))
+          (fun i : {i : κ // i ≠ a} => Set.Ioi (t i.val * u))
       let rpre : Set ({i : κ // i ≠ a} → ℝ) := embed ⁻¹' r
       have hu : 0 ≤ u := div_nonneg hy.le (ht a).le
       have hloseMap : Measurable loseMap := by
@@ -1823,7 +1821,7 @@ private theorem clock_min_excess_restrict_factorization
         intro i
         have hxi : Measurable
             (fun x : {j : κ // j ≠ a} → ℝ => x i) := measurable_pi_apply i
-        exact (hxi.div_const (t i.1)).sub_const u
+        exact (hxi.div_const (t i.val)).sub_const u
       have horth : MeasurableSet orth := by
         apply MeasurableSet.univ_pi
         intro i
@@ -1857,21 +1855,21 @@ private theorem clock_min_excess_restrict_factorization
       have hlaw := map_losing_scaled_excess t ht a hu
       change Measure.map loseMap (loseμ.restrict orth) =
           (∏ i : {i : κ // i ≠ a},
-            ENNReal.ofReal (Real.exp (-(t i.1 * u)))) • ρ at hlaw
+            ENNReal.ofReal (Real.exp (-(t i.val * u)))) • ρ at hlaw
       have hlawR := congrArg (fun μ : Measure ({i : κ // i ≠ a} → ℝ) =>
         μ rpre) hlaw
       rw [Measure.map_apply hloseMap hrpre,
         Measure.restrict_apply (hrpre.preimage hloseMap),
-        Measure.smul_apply, smul_eq_mul] at hlawR
+        smul_apply, smul_eq_mul] at hlawR
       have horthMass : loseμ orth =
           ∏ i : {i : κ // i ≠ a},
-            ENNReal.ofReal (Real.exp (-(t i.1 * u))) := by
+            ENNReal.ofReal (Real.exp (-(t i.val * u))) := by
         have hlawU := congrArg
           (fun μ : Measure ({i : κ // i ≠ a} → ℝ) => μ Set.univ) hlaw
         rw [Measure.map_apply hloseMap MeasurableSet.univ] at hlawU
         simp only [Set.preimage_univ] at hlawU
         rw [Measure.restrict_apply MeasurableSet.univ,
-          Measure.smul_apply, smul_eq_mul, measure_univ, mul_one] at hlawU
+          smul_apply, smul_eq_mul, measure_univ, mul_one] at hlawU
         simpa using hlawU
       have hρfull : ρfull r = ρ rpre := by
         dsimp only [ρfull]
@@ -1974,7 +1972,6 @@ private lemma weightedLexScore_law
         {G | weightedLexWinner t G = a} := by
     intro a
     filter_upwards [weightedWinner_ae_eq_lex t] with G hG
-    apply propext
     rw [hG]
   have hpart (a : κ) :
       Measure.map Y
@@ -2049,7 +2046,7 @@ private lemma weightedLexScore_law
     simp_rw [hpart]
     ext s hs
     rw [Measure.sum_apply _ hs]
-    simp only [Measure.smul_apply, smul_eq_mul, tsum_fintype]
+    simp only [smul_apply, smul_eq_mul, tsum_fintype]
     rw [← Finset.sum_mul]
     have hof : ∑ a, ENNReal.ofReal (t a) = 1 := by
       rw [← ENNReal.ofReal_sum_of_nonneg (fun a _ => (ht a).le), htotal]
@@ -2093,7 +2090,7 @@ private theorem weighted_score_excess_factorization
     Measure.map (insertWinnerZero a) (weightedLosingExcessLaw t a)
   let (a : κ) : IsProbabilityMeasure (ρ a) := by
     let (i : {i : κ // i ≠ a}) : IsProbabilityMeasure
-        (expMeasure (t i.1)) := isProbabilityMeasure_expMeasure (ht i.1)
+        (expMeasure (t i.val)) := isProbabilityMeasure_expMeasure (ht i.val)
     dsimp [ρ, weightedLosingExcessLaw]
     exact Measure.isProbabilityMeasure_map
       (insertWinnerZero_measurable a).aemeasurable
@@ -2146,7 +2143,6 @@ private theorem weighted_score_excess_factorization
         F ⁻¹' {G | weightedLexWinner t G = a} =ᵐ[clockLaw κ]
           {E | strictClockWin t a E} := by
       filter_upwards [hpos, htieClock] with E hE htie
-      apply propext
       change (weightedLexWinner t (F E) = a ↔ strictClockWin t a E)
       exact weightedLexWinner_clock_iff t ht E hE a
         (fun b hba => htie b a hba)
@@ -2297,19 +2293,19 @@ private theorem weighted_score_excess_factorization
 private noncomputable def withinClusterWeight {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (c : K.κ)
     (u : clusterFiber K c) : ℝ :=
-  D.L.prior u.1 / K.s c
+  D.L.prior u.val / K.s c
 
 private lemma withinClusterWeight_pos {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (c : K.κ)
     (u : clusterFiber K c) : 0 < withinClusterWeight K c u := by
-  exact div_pos (D.prior_pos u.1) (clusterMass_pos K c)
+  exact div_pos (D.prior_pos u.val) (clusterMass_pos K c)
 
 private lemma withinClusterWeight_sum {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (c : K.κ) :
     ∑ u : clusterFiber K c, withinClusterWeight K c u = 1 := by
   unfold withinClusterWeight
   rw [← Finset.sum_div]
-  have hnum : (∑ u : clusterFiber K c, D.L.prior u.1) = K.s c := by
+  have hnum : (∑ u : clusterFiber K c, D.L.prior u.val) = K.s c := by
     unfold Clustering.s
     simpa using
       (Finset.sum_subtype_eq_sum_filter
@@ -2320,7 +2316,7 @@ private lemma withinClusterWeight_sum {p : α × β → ℝ}
 private lemma groupedG_eq_weightedLexScore {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (ε : D.L.ι → ℝ) (c : K.κ) :
     groupedG K ε c =
-      weightedLexScore (withinClusterWeight K c) (fun u => ε u.1) := by
+      weightedLexScore (withinClusterWeight K c) (fun u => ε u.val) := by
   rw [weightedLexScore_eq_winnerValue]
   rfl
 
@@ -2329,7 +2325,7 @@ measure-theoretic independence input for both parts of Lemma 7.2(a). -/
 private lemma grouped_block_law {p : α × β → ℝ} {D : SeedSetup p}
     (K : Clustering D) :
     Measure.map (fun ε : D.L.ι → ℝ =>
-        fun c : K.κ => fun u : clusterFiber K c => ε u.1)
+        fun c : K.κ => fun u : clusterFiber K c => ε u.val)
         (seedLaw D.L.ι) =
       Measure.pi (fun c : K.κ => seedLaw (clusterFiber K c)) := by
   let e : (Σ c : K.κ, clusterFiber K c) ≃ D.L.ι :=
@@ -2345,11 +2341,11 @@ private lemma grouped_block_law {p : α × β → ℝ} {D : SeedSetup p}
       (fun (_c : K.κ) (_u : clusterFiber K _c) => ℝ)
   have hfun :
       (fun ε : D.L.ι → ℝ =>
-          fun c : K.κ => fun u : clusterFiber K c => ε u.1) =
+          fun c : K.κ => fun u : clusterFiber K c => ε u.val) =
         curry ∘ reindex := by
     funext ε c u
-    change ε u.1 = reindex ε ⟨c, u⟩
-    change ε u.1 =
+    change ε u.val = reindex ε ⟨c, u⟩
+    change ε u.val =
       (MeasurableEquiv.piCongrLeft
         (fun _ : Σ c : K.κ, clusterFiber K c => ℝ) e.symm ε) ⟨c, u⟩
     conv_rhs => rw [← e.symm_apply_apply ⟨c, u⟩]
@@ -2377,7 +2373,7 @@ private theorem grouped_gumbel_law {p : α × β → ℝ} {D : SeedSetup p}
     Measure.map (groupedG K) (seedLaw D.L.ι) = seedLaw K.κ := by
   let block : (D.L.ι → ℝ) →
       ((c : K.κ) → clusterFiber K c → ℝ) :=
-    fun ε c u => ε u.1
+    fun ε c u => ε u.val
   let score : (((c : K.κ) → clusterFiber K c → ℝ)) → K.κ → ℝ :=
     fun ξ c => weightedLexScore (withinClusterWeight K c) (ξ c)
   have hblock : Measurable block := by
@@ -2385,7 +2381,7 @@ private theorem grouped_gumbel_law {p : α × β → ℝ} {D : SeedSetup p}
     intro c
     apply Measurable.of_eval
     intro u
-    exact measurable_pi_apply u.1
+    exact measurable_pi_apply u.val
   have hscoreCoord (c : K.κ) :
       Measurable (fun ξ : clusterFiber K c → ℝ =>
         weightedLexScore (withinClusterWeight K c) ξ) :=
@@ -2448,7 +2444,7 @@ private theorem grouped_seed_factorization {p : α × β → ℝ}
   let Ambient : Type := D.L.ι → ℝ
   let Residual : Type := (c : K.κ) → clusterFiber K c → ℝ
   let block : (D.L.ι → ℝ) → Block :=
-    fun ε c u => ε u.1
+    fun ε c u => ε u.val
   let S : (c : K.κ) → (clusterFiber K c → ℝ) → ℝ :=
     fun c ξ => weightedLexScore (withinClusterWeight K c) ξ
   let X : (c : K.κ) → (clusterFiber K c → ℝ) →
@@ -2464,7 +2460,7 @@ private theorem grouped_seed_factorization {p : α × β → ℝ}
       (K.κ → ℝ) × (K.κ → Ambient) :=
     fun q => (fun c => (q c).1, fun c => (q c).2)
   let decode : (K.κ → Ambient) → Residual :=
-    fun q c u => q c u.1
+    fun q c u => q c u.val
   let Q : ((K.κ → ℝ) × (K.κ → Ambient)) →
       ((K.κ → ℝ) × Residual) := Prod.map id decode
   let target : (D.L.ι → ℝ) → (K.κ → ℝ) × Residual :=
@@ -2479,7 +2475,7 @@ private theorem grouped_seed_factorization {p : α × β → ℝ}
     intro c
     apply Measurable.of_eval
     intro u
-    exact measurable_pi_apply u.1
+    exact measurable_pi_apply u.val
   have hS (c : K.κ) : Measurable (S c) :=
     weightedLexScore_measurable (withinClusterWeight K c)
   have hX (c : K.κ) : Measurable (X c) :=
@@ -2511,7 +2507,7 @@ private theorem grouped_seed_factorization {p : α × β → ℝ}
     intro c
     apply Measurable.of_eval
     intro u
-    exact (measurable_pi_apply u.1).comp (measurable_pi_apply c)
+    exact (measurable_pi_apply u.val).comp (measurable_pi_apply c)
   have hQ : Measurable Q := measurable_id.prodMap hdecode
   let (c : K.κ) : IsProbabilityMeasure (μ c) := by
     dsimp only [μ]
@@ -2628,7 +2624,7 @@ private theorem grouped_seed_factorization {p : α × β → ℝ}
     · funext c u
       dsimp only [target, Q, separate, U, decode, T, embed,
         Function.comp_apply, Prod.map_apply, id_eq]
-      rw [dite_eq_left u.2]
+      rw [dite_eq_left u.property]
       simpa using (hresidual ε c u).symm
   have htargetMeas : Measurable target := by
     rw [htarget]
@@ -2692,10 +2688,10 @@ private lemma groupedPair_measurable {p : α × β → ℝ}
     apply Measurable.of_eval
     intro c
     have hblock : Measurable
-        (fun ε : D.L.ι → ℝ => fun u : clusterFiber K c => ε u.1) := by
+        (fun ε : D.L.ι → ℝ => fun u : clusterFiber K c => ε u.val) := by
       apply Measurable.of_eval
       intro u
-      exact measurable_pi_apply u.1
+      exact measurable_pi_apply u.val
     have hs := (weightedLexScore_measurable (withinClusterWeight K c)).comp hblock
     convert hs using 1
     funext ε
@@ -2705,8 +2701,8 @@ private lemma groupedPair_measurable {p : α × β → ℝ}
     intro c
     apply Measurable.of_eval
     intro u
-    have hε : Measurable (fun ε : D.L.ι → ℝ => ε u.1) :=
-      measurable_pi_apply u.1
+    have hε : Measurable (fun ε : D.L.ι → ℝ => ε u.val) :=
+      measurable_pi_apply u.val
     have hGc : Measurable (fun ε : D.L.ι → ℝ => groupedG K ε c) :=
       (measurable_pi_apply c).comp hG
     unfold groupedResidual
@@ -2821,16 +2817,16 @@ private theorem grouped_winner_agrees_ae {p : α × β → ℝ}
         Real.log (D.L.prior ℓ / K.s c) + ε ℓ ≤ groupedG K ε c := by
       exact Classical.choose_spec
         (Finite.exists_max fun u : clusterFiber K c =>
-          Real.log (D.L.prior u.1 / K.s c) + ε u.1) ⟨ℓ, rfl⟩
+          Real.log (D.L.prior u.val / K.s c) + ε u.val) ⟨ℓ, rfl⟩
     have houter :
         Real.log (K.sigma c z) + groupedG K ε c ≤
           Real.log (K.sigma b z) + groupedG K ε b := by
       exact Classical.choose_spec
         (Finite.exists_max fun d : K.κ =>
           Real.log (K.sigma d z) + groupedG K ε d) c
-    have hwcl : K.cl w.1 = b := w.2
-    have hchosen : raceValue D z ε ℓ ≤ raceValue D z ε w.1 := by
-      rw [hscore ℓ, hscore w.1, hwcl]
+    have hwcl : K.cl w.val = b := w.property
+    have hchosen : raceValue D z ε ℓ ≤ raceValue D z ε w.val := by
+      rw [hscore ℓ, hscore w.val, hwcl]
       calc
         Real.log (K.sigma c z) +
             (Real.log (D.L.prior ℓ / K.s c) + ε ℓ) ≤
@@ -2838,16 +2834,16 @@ private theorem grouped_winner_agrees_ae {p : α × β → ℝ}
           by linarith
         _ ≤ Real.log (K.sigma b z) + groupedG K ε b := houter
         _ = Real.log (K.sigma b z) +
-            (Real.log (D.L.prior w.1 / K.s b) + ε w.1) := by
+            (Real.log (D.L.prior w.val / K.s b) + ε w.val) := by
           rfl
-    have hmax : raceValue D z ε w.1 ≤ raceValue D z ε ℓ := by
+    have hmax : raceValue D z ε w.val ≤ raceValue D z ε ℓ := by
       exact weightedWinner_max
-        (fun i : D.L.ι => D.post i z) ε w.1
-    have heq : raceValue D z ε ℓ = raceValue D z ε w.1 :=
+        (fun i : D.L.ι => D.post i z) ε w.val
+    have heq : raceValue D z ε ℓ = raceValue D z ε w.val :=
       le_antisymm hchosen hmax
-    have hlabel : ℓ = w.1 := by
+    have hlabel : ℓ = w.val := by
       by_contra hne
-      exact hties z ℓ w.1 hne heq
+      exact hties z ℓ w.val hne heq
     exact hlabel
   · simp [groupedLabelWinner, hz]
 
@@ -2914,16 +2910,16 @@ private lemma groupedWithinWinner_ae_iff_residual_zero
     let w := groupedWithinWinner K ε (K.cl a)
     have hchosen :
         groupedG K ε (K.cl a) =
-          Real.log (D.L.prior w.1 / K.s (K.cl w.1)) + ε w.1 := by
+          Real.log (D.L.prior w.val / K.s (K.cl w.val)) + ε w.val := by
       unfold groupedG
       rw [w.property]
     by_contra hne
-    have hvalNe : a ≠ w.1 := by
+    have hvalNe : a ≠ w.val := by
       intro haw
       apply hne
       apply Subtype.ext
       exact haw.symm
-    have hdistinct := htie a w.1 hvalNe
+    have hdistinct := htie a w.val hvalNe
     apply hdistinct
     simpa only [weightedValue, t] using hvalue.trans hchosen
 
@@ -2956,7 +2952,6 @@ private lemma labelWinnerEvent_ae_grouped_product
   filter_upwards [grouped_winner_agrees_ae D K,
     groupedWithinWinner_ae_iff_residual_zero K a,
     hcluster] with ε hw hwithin hclusterEq
-  apply propext
   have hwz := congrFun hw z
   let B := groupedClusterWinner K (groupedG K ε) z
   let BL := groupedClusterLexWinner K (groupedG K ε) z
@@ -2966,13 +2961,13 @@ private lemma labelWinnerEvent_ae_grouped_product
       groupedResidual K ε (K.cl a) ⟨a, rfl⟩ = 0)
   constructor
   · intro hwin
-    have hlabel : (groupedWithinWinner K ε B).1 = a := by
+    have hlabel : (groupedWithinWinner K ε B).val = a := by
       have hgrouped : groupedLabelWinner K ε z = a := hwz.symm.trans hwin
       simpa only [groupedLabelWinner, hz, ite_true] using hgrouped
     have hB : B = K.cl a := by
       calc
-        B = K.cl (groupedWithinWinner K ε B).1 :=
-          (groupedWithinWinner K ε B).2.symm
+        B = K.cl (groupedWithinWinner K ε B).val :=
+          (groupedWithinWinner K ε B).property.symm
         _ = K.cl a := congrArg K.cl hlabel
     have hW : groupedWithinWinner K ε (K.cl a) =
         (⟨a, rfl⟩ : clusterFiber K (K.cl a)) := by
@@ -2990,7 +2985,7 @@ private lemma labelWinnerEvent_ae_grouped_product
       hwithin.mpr hprod.2
     have hgrouped : groupedLabelWinner K ε z = a := by
       simp only [groupedLabelWinner, hz, ite_true]
-      change (groupedWithinWinner K ε B).1 = a
+      change (groupedWithinWinner K ε B).val = a
       rw [hB]
       exact congrArg Subtype.val hW
     exact hwz.trans hgrouped
@@ -3230,10 +3225,10 @@ private theorem finite_mixture_golden_le
   let : IsProbabilityMeasure Q := hQprob
   have hMQ : M ≪ Q := by
     intro s hQs
-    rw [hM, Measure.finsetSum_apply]
+    rw [hM, sum_apply]
     apply Finset.sum_eq_zero
     intro i _
-    rw [Measure.smul_apply, smul_eq_mul]
+    rw [smul_apply, smul_eq_mul]
     by_cases hri : r i = 0
     · simp [hri]
     · have hriPos : 0 < r i :=
@@ -3378,7 +3373,6 @@ private lemma clusterSeedLawGivenWinner_eq_lex_restrict
         groupedClusterEvent K b z := by
     filter_upwards [weightedWinner_ae_eq_lex
       (fun c : K.κ => K.sigma c z)] with G hG
-    apply propext
     change (groupedClusterWinner K G z = b ↔
       groupedClusterLexWinner K G z = b)
     change (weightedWinner (fun c : K.κ => K.sigma c z) G = b ↔
@@ -3397,7 +3391,6 @@ private lemma groupedClusterEvent_measure
         groupedClusterEvent K b z := by
     filter_upwards [weightedWinner_ae_eq_lex
       (fun c : K.κ => K.sigma c z)] with G hG
-    apply propext
     change (groupedClusterWinner K G z = b ↔
       groupedClusterLexWinner K G z = b)
     change (weightedWinner (fun c : K.κ => K.sigma c z) G = b ↔
@@ -3462,7 +3455,7 @@ private lemma groupedResidualLawGivenLabel_isProbability
   have hweight : 0 < D.L.prior a / K.s (K.cl a) :=
     div_pos (D.prior_pos a) (clusterMass_pos K (K.cl a))
   unfold groupedResidualLawGivenLabel
-  rw [Measure.smul_apply, smul_eq_mul, Measure.restrict_apply_univ,
+  rw [smul_apply, smul_eq_mul, Measure.restrict_apply_univ,
     groupedResidualEvent_measure D K a,
     ENNReal.inv_mul_cancel
       (ENNReal.ofReal_pos.mpr hweight).ne' ENNReal.ofReal_ne_top]
@@ -3678,7 +3671,7 @@ private lemma seedLawGivenWinner_isProbability
       lt_of_le_of_ne (racePost_nonneg D a z) (Ne.symm hpost)
     constructor
     unfold seedLawGivenWinner
-    rw [ite_eq_right hpost, Measure.smul_apply, smul_eq_mul,
+    rw [ite_eq_right hpost, smul_apply, smul_eq_mul,
       Measure.restrict_apply_univ,
       label_winner_probability_measure D a z hz,
       ENNReal.inv_mul_cancel
@@ -3702,7 +3695,7 @@ private lemma clusterSeedLawGivenWinner_isProbability
       lt_of_le_of_ne (raceSigma_nonneg K b z) (Ne.symm hsigma)
     constructor
     unfold clusterSeedLawGivenWinner
-    rw [ite_eq_right hsigma, Measure.smul_apply, smul_eq_mul,
+    rw [ite_eq_right hsigma, smul_apply, smul_eq_mul,
       Measure.restrict_apply_univ,
       cluster_winner_probability_measure K b z hz,
       ENNReal.inv_mul_cancel
@@ -3735,10 +3728,10 @@ private lemma seedContextMarginal_isProbability
         seedLawGivenWinner D a z) Set.univ =
       ∑ z, (ENNReal.ofReal
         (seedContextJoint D a ℓ₀ z / seedContextMass D a ℓ₀) •
-          seedLawGivenWinner D a z) Set.univ by simp only [Measure.coe_finsetSum, Measure.coe_smul,
+          seedLawGivenWinner D a z) Set.univ by simp only [FunLike.coe_sum, FunLike.coe_smul,
               Finset.sum_apply, Pi.smul_apply, measure_univ, smul_eq_mul, mul_one,
-              Measure.smul_apply]]
-  simp only [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]
+              smul_apply]]
+  simp only [smul_apply, smul_eq_mul, measure_univ, mul_one]
   rw [← ENNReal.ofReal_sum_of_nonneg
     (fun z _ => (seedSource_isPMF D a ℓ₀).nonneg z)]
   have htotal :
@@ -3759,10 +3752,10 @@ private lemma clusterSeedContextMarginal_isProbability
   rw [show (∑ z, ENNReal.ofReal (scalarSource K g b z) •
       clusterSeedLawGivenWinner K b z) Set.univ =
       ∑ z, (ENNReal.ofReal (scalarSource K g b z) •
-        clusterSeedLawGivenWinner K b z) Set.univ by simp only [Measure.coe_finsetSum,
-            Measure.coe_smul, Finset.sum_apply, Pi.smul_apply, measure_univ, smul_eq_mul, mul_one,
-            Measure.smul_apply]]
-  simp only [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]
+        clusterSeedLawGivenWinner K b z) Set.univ by simp only [FunLike.coe_sum,
+            FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply, measure_univ, smul_eq_mul, mul_one,
+            smul_apply]]
+  simp only [smul_apply, smul_eq_mul, measure_univ, mul_one]
   rw [← ENNReal.ofReal_sum_of_nonneg
     (fun z _ => (scalarSource_isPMF_for_grouping K g b).nonneg z)]
   have htotal : ∑ z, scalarSource K g b z = 1 := by
@@ -3990,7 +3983,6 @@ private lemma balance_winnerEvent_ae_lex {p : α × β → ℝ}
     {ε | winner D ε z = a} =ᵐ[seedLaw D.L.ι]
       {ε | lexWinner D ε z = a} := by
   filter_upwards [winner_ae_eq_lexWinner D] with ε hε
-  apply propext
   rw [congrFun hε z]
 
 private lemma balance_lexWinnerEvent_measurable {p : α × β → ℝ}
@@ -4076,10 +4068,10 @@ private theorem balance_finite_mixture_golden_eq
   let : IsProbabilityMeasure Q := hQprob
   have hMQ : M ≪ Q := by
     intro s hQs
-    rw [hM, Measure.finsetSum_apply]
+    rw [hM, sum_apply]
     apply Finset.sum_eq_zero
     intro i _
-    rw [Measure.smul_apply, smul_eq_mul]
+    rw [smul_apply, smul_eq_mul]
     by_cases hri : r i = 0
     · simp [hri]
     · have hriPos : 0 < r i :=
@@ -4506,7 +4498,7 @@ private lemma balance_withDensity_finset_sum
     ν.withDensity (fun x => ∑ i, f i x) =
       ∑ i, ν.withDensity (f i) := by
   ext s hs
-  rw [Measure.finsetSum_apply]
+  rw [sum_apply]
   simp_rw [withDensity_apply _ hs]
   exact lintegral_finsetSum Finset.univ fun i _ => hf i
 
@@ -5982,10 +5974,10 @@ private lemma ae_pos_finset_mixture {ι : Type*} [Fintype ι]
     (r : ι → ℝ) (P : ι → Measure ℝ)
     (hPpos : ∀ i, ∀ᵐ u ∂P i, 0 < u) :
     ∀ᵐ u ∂(∑ i, ENNReal.ofReal (r i) • P i), 0 < u := by
-  rw [ae_iff, Measure.finsetSum_apply]
+  rw [ae_iff, sum_apply]
   apply Finset.sum_eq_zero
   intro i _
-  rw [Measure.smul_apply, smul_eq_mul, (ae_iff.mp (hPpos i)), mul_zero]
+  rw [smul_apply, smul_eq_mul, (ae_iff.mp (hPpos i)), mul_zero]
 
 private noncomputable def scalarMixtureDensity {ι : Type*} [Fintype ι]
     (r X : ι → ℝ) (w : ℝ) : ℝ :=
@@ -6153,7 +6145,7 @@ private lemma scalarDensityMeasure_finset_mixture
   apply Measure.ext
   intro s hs
   rw [scalarDensityMeasure_apply scalarMixtureDensity_integrable
-    (scalarMixtureDensity_nonneg hr) hs, Measure.finsetSum_apply,
+    (scalarMixtureDensity_nonneg hr) hs, sum_apply,
     show (∫ w in s, scalarMixtureDensity r X w) =
         ∑ i, ∫ w in s, r i * scalarLogExpDensity (w - X i) by
       unfold scalarMixtureDensity
@@ -6163,7 +6155,7 @@ private lemma scalarDensityMeasure_finset_mixture
   rw [ENNReal.ofReal_sum_of_nonneg]
   · apply Finset.sum_congr rfl
     intro i _
-    rw [Measure.smul_apply, smul_eq_mul,
+    rw [smul_apply, smul_eq_mul,
       scalarDensityMeasure_apply (scalarShiftDensity_integrable (X i))
         (fun w => scalarLogExpDensity_nonneg _) hs,
       integral_const_mul, ← ENNReal.ofReal_mul (hr.nonneg i)]
@@ -6541,10 +6533,10 @@ private theorem scalar_offdiag_context_1771 {p : α × β → ℝ}
     constructor
     rw [hmix]
     rw [show (∑ z, ENNReal.ofReal (r z) • Pz z) Set.univ =
-        ∑ z, (ENNReal.ofReal (r z) • Pz z) Set.univ by simp only [Measure.coe_finsetSum,
-            Measure.coe_smul, Finset.sum_apply, Pi.smul_apply, measure_univ, smul_eq_mul, mul_one,
-            Measure.smul_apply]]
-    simp only [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]
+        ∑ z, (ENNReal.ofReal (r z) • Pz z) Set.univ by simp only [FunLike.coe_sum,
+            FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply, measure_univ, smul_eq_mul, mul_one,
+            smul_apply]]
+    simp only [smul_apply, smul_eq_mul, measure_univ, mul_one]
     rw [← ENNReal.ofReal_sum_of_nonneg (fun z _ => hr.nonneg z), hrtotal]
     norm_num
   let : IsProbabilityMeasure M0 := hMprob
@@ -6828,10 +6820,10 @@ private theorem scalar_diag_context {p : α × β → ℝ}
     constructor
     rw [hmix]
     rw [show (∑ z, ENNReal.ofReal (r z) • Pz z) Set.univ =
-        ∑ z, (ENNReal.ofReal (r z) • Pz z) Set.univ by simp only [Measure.coe_finsetSum,
-            Measure.coe_smul, Finset.sum_apply, Pi.smul_apply, measure_univ, smul_eq_mul, mul_one,
-            Measure.smul_apply]]
-    simp only [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]
+        ∑ z, (ENNReal.ofReal (r z) • Pz z) Set.univ by simp only [FunLike.coe_sum,
+            FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply, measure_univ, smul_eq_mul, mul_one,
+            smul_apply]]
+    simp only [smul_apply, smul_eq_mul, measure_univ, mul_one]
     rw [← ENNReal.ofReal_sum_of_nonneg (fun z _ => hr.nonneg z), hrtotal]
     norm_num
   have hPMfinite (z : α × β) (hz : 0 < r z) :
@@ -7189,12 +7181,12 @@ private theorem losing_product_klDiv {p : α × β → ℝ}
       u * (1 / K.sigma b z - 1) := by
   let μ : losingIndex K b → Measure ℝ := fun c =>
     (expMeasure 1).map
-      (fun e => u * (K.sigma c.1 z / K.sigma b z) + e)
+      (fun e => u * (K.sigma c.val z / K.sigma b z) + e)
   let ν : losingIndex K b → Measure ℝ := fun _ => expMeasure 1
   have hsb : 0 < K.sigma b z := K.sigma_pos b z hz
   have hshift (c : losingIndex K b) :
-      0 ≤ u * (K.sigma c.1 z / K.sigma b z) :=
-    mul_nonneg hu (div_nonneg (K.sigma_pos c.1 z hz).le hsb.le)
+      0 ≤ u * (K.sigma c.val z / K.sigma b z) :=
+    mul_nonneg hu (div_nonneg (K.sigma_pos c.val z hz).le hsb.le)
   have hμ (c : losingIndex K b) : IsProbabilityMeasure (μ c) := by
     unfold μ
     let : IsProbabilityMeasure (expMeasure 1) :=
@@ -7217,7 +7209,7 @@ private theorem losing_product_klDiv {p : α × β → ℝ}
     _ = ∑ c, (klDiv (μ c) (ν c)).toReal := by
       exact ENNReal.toReal_sum (fun c _ => hfinite c)
     _ = ∑ c : losingIndex K b,
-        u * (K.sigma c.1 z / K.sigma b z) := by
+        u * (K.sigma c.val z / K.sigma b z) := by
       apply Finset.sum_congr rfl
       intro c _
       unfold μ ν
@@ -7235,12 +7227,12 @@ private theorem losingReference_klDiv_ne_top {p : α × β → ℝ}
     klDiv (losingClockLaw K b z u) (losingReference K b) ≠ ⊤ := by
   let μ : losingIndex K b → Measure ℝ := fun c =>
     (expMeasure 1).map
-      (fun e => u * (K.sigma c.1 z / K.sigma b z) + e)
+      (fun e => u * (K.sigma c.val z / K.sigma b z) + e)
   let ν : losingIndex K b → Measure ℝ := fun _ => expMeasure 1
   have hsb : 0 < K.sigma b z := K.sigma_pos b z hz
   have hshift (c : losingIndex K b) :
-      0 ≤ u * (K.sigma c.1 z / K.sigma b z) :=
-    mul_nonneg hu (div_nonneg (K.sigma_pos c.1 z hz).le hsb.le)
+      0 ≤ u * (K.sigma c.val z / K.sigma b z) :=
+    mul_nonneg hu (div_nonneg (K.sigma_pos c.val z hz).le hsb.le)
   have hμ (c : losingIndex K b) : IsProbabilityMeasure (μ c) := by
     unfold μ
     let : IsProbabilityMeasure (expMeasure 1) :=
@@ -7262,7 +7254,7 @@ private lemma losingClockLaw_isProbability_all {p : α × β → ℝ}
     isProbabilityMeasure_expMeasure zero_lt_one
   let (c : losingIndex K b) : IsProbabilityMeasure
       ((expMeasure 1).map
-        (fun e => u * (K.sigma c.1 z / K.sigma b z) + e)) := by
+        (fun e => u * (K.sigma c.val z / K.sigma b z) + e)) := by
     exact Measure.isProbabilityMeasure_map
       (measurable_const.add measurable_id).aemeasurable
   unfold losingClockLaw
@@ -7287,10 +7279,10 @@ private lemma losingClockMarginal_isProbability {p : α × β → ℝ}
       losingClockLaw K b z u) Set.univ =
       ∑ z, (ENNReal.ofReal (coneSource K g b u z) •
         losingClockLaw K b z u) Set.univ by
-      simp only [Measure.coe_finsetSum, Measure.coe_smul,
+      simp only [FunLike.coe_sum, FunLike.coe_smul,
             Finset.sum_apply, Pi.smul_apply, measure_univ, smul_eq_mul, mul_one,
-            Measure.smul_apply]]
-  simp only [Measure.smul_apply, smul_eq_mul, measure_univ, mul_one]
+            smul_apply]]
+  simp only [smul_apply, smul_eq_mul, measure_univ, mul_one]
   rw [← ENNReal.ofReal_sum_of_nonneg
     (fun z _ => (coneSource_isPMF K g b u).nonneg z)]
   have htotal : ∑ z, coneSource K g b u z = 1 := by
@@ -7519,7 +7511,7 @@ private theorem coneCharge_eq_dMis {p : α × β → ℝ}
 private noncomputable def clusterClockSplit {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (b : K.κ) :
     (K.κ → ℝ) → ℝ × (losingIndex K b → ℝ) :=
-  fun G => (Real.exp (-G b), fun c => Real.exp (-G c.1))
+  fun G => (Real.exp (-G b), fun c => Real.exp (-G c.val))
 
 private noncomputable def clusterClockJoin {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (b : K.κ) :
@@ -7533,7 +7525,7 @@ private lemma clusterClockSplit_measurable {p : α × β → ℝ}
   · exact Real.measurable_exp.comp (measurable_pi_apply b).neg
   · apply Measurable.of_eval
     intro c
-    exact Real.measurable_exp.comp (measurable_pi_apply c.1).neg
+    exact Real.measurable_exp.comp (measurable_pi_apply c.val).neg
 
 private lemma clusterClockJoin_measurable {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (b : K.κ) :
@@ -7560,7 +7552,7 @@ private noncomputable def raceLosingKernel {p : α × β → ℝ}
     Kernel ℝ (losingIndex K b → ℝ) :=
   ((Kernel.id : Kernel ℝ ℝ).prod
       (Kernel.const ℝ (losingReference K b))).map
-    (fun ue c => ue.1 * (K.sigma c.1 z / K.sigma b z) + ue.2 c)
+    (fun ue c => ue.1 * (K.sigma c.val z / K.sigma b z) + ue.2 c)
 
 private lemma raceLosingKernel_apply {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (b : K.κ) (z : α × β) (u : ℝ) :
@@ -7571,7 +7563,7 @@ private lemma raceLosingKernel_apply {p : α × β → ℝ}
     unfold losingReference
     infer_instance
   let r : losingIndex K b → ℝ := fun c =>
-    K.sigma c.1 z / K.sigma b z
+    K.sigma c.val z / K.sigma b z
   change
     (((Kernel.id : Kernel ℝ ℝ).prod
         (Kernel.const ℝ (Measure.pi fun _ : losingIndex K b => expMeasure 1))).map
@@ -7662,7 +7654,6 @@ private lemma weightedWinner_clock_restrict_map
       {G | weightedWinner t G = a} =ᵐ[seedLaw κ]
         {G | weightedLexWinner t G = a} := by
     filter_upwards [weightedWinner_ae_eq_lex t] with G hG
-    apply propext
     rw [hG]
   have hone : ∀ᵐ x : ℝ ∂(expMeasure 1), 0 < x := by
     have hnot := measure_eq_zero_iff_ae_notMem.mp expMeasure_one_Iic_zero
@@ -7682,7 +7673,6 @@ private lemma weightedWinner_clock_restrict_map
       F ⁻¹' {G | weightedLexWinner t G = a} =ᵐ[clockLaw κ]
         {E | strictClockWin t a E} := by
     filter_upwards [hpos, htieClock] with E hE htie
-    apply propext
     change (weightedLexWinner t (F E) = a ↔ strictClockWin t a E)
     exact weightedLexWinner_clock_iff t ht E hE a
       (fun i hia => htie i a hia)
@@ -7724,12 +7714,12 @@ private lemma map_weightedLosingExcess_scale
     {κ : Type} [Fintype κ] [DecidableEq κ]
     (t : κ → ℝ) (ht : ∀ i, 0 < t i) (a : κ) :
     Measure.map
-        (fun R : {i : κ // i ≠ a} → ℝ => fun i => t i.1 * R i)
+        (fun R : {i : κ // i ≠ a} → ℝ => fun i => t i.val * R i)
         (weightedLosingExcessLaw t a) =
       Measure.pi fun _ : {i : κ // i ≠ a} => expMeasure 1 := by
-  let (i : {i : κ // i ≠ a}) : IsProbabilityMeasure (expMeasure (t i.1)) :=
-    isProbabilityMeasure_expMeasure (ht i.1)
-  let r : {i : κ // i ≠ a} → ℝ := fun i => t i.1
+  let (i : {i : κ // i ≠ a}) : IsProbabilityMeasure (expMeasure (t i.val)) :=
+    isProbabilityMeasure_expMeasure (ht i.val)
+  let r : {i : κ // i ≠ a} → ℝ := fun i => t i.val
   unfold weightedLosingExcessLaw
   change Measure.map (fun R i => r i * R i)
       (Measure.pi fun i : {i : κ // i ≠ a} => expMeasure (r i)) = _
@@ -7737,7 +7727,7 @@ private lemma map_weightedLosingExcess_scale
     AEMeasurable (fun x : ℝ => r i * x) (expMeasure (r i)))]
   congr 1
   funext i
-  exact map_mul_expMeasure (ht i.1)
+  exact map_mul_expMeasure (ht i.val)
 
 private lemma compProd_raceLosingKernel_eq_map {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (b : K.κ) (z : α × β)
@@ -7745,7 +7735,7 @@ private lemma compProd_raceLosingKernel_eq_map {p : α × β → ℝ}
     μ ⊗ₘ raceLosingKernel K b z =
       Measure.map
         (fun ue : ℝ × (losingIndex K b → ℝ) =>
-          (ue.1, fun c => ue.1 * (K.sigma c.1 z / K.sigma b z) + ue.2 c))
+          (ue.1, fun c => ue.1 * (K.sigma c.val z / K.sigma b z) + ue.2 c))
         (μ.prod (losingReference K b)) := by
   let : IsProbabilityMeasure (expMeasure 1) :=
     isProbabilityMeasure_expMeasure zero_lt_one
@@ -7755,7 +7745,7 @@ private lemma compProd_raceLosingKernel_eq_map {p : α × β → ℝ}
   let : IsMarkovKernel (raceLosingKernel K b z) :=
     raceLosingKernel_isMarkov K b z
   let r : losingIndex K b → ℝ := fun c =>
-    K.sigma c.1 z / K.sigma b z
+    K.sigma c.val z / K.sigma b z
   change μ ⊗ₘ raceLosingKernel K b z =
     Measure.map
       (fun ue : ℝ × (losingIndex K b → ℝ) =>
@@ -7781,7 +7771,7 @@ private lemma rawClockSplit_restrict_factorization {p : α × β → ℝ}
     {D : SeedSetup p} (K : Clustering D) (b : K.κ) (z : α × β)
     (hz : z ∈ support p) :
     Measure.map
-        (fun E : K.κ → ℝ => (E b, fun c : losingIndex K b => E c.1))
+        (fun E : K.κ → ℝ => (E b, fun c : losingIndex K b => E c.val))
         ((clockLaw K.κ).restrict
           {E | strictClockWin (fun c => K.sigma c z) b E}) =
       ENNReal.ofReal (K.sigma b z) •
@@ -7796,19 +7786,19 @@ private lemma rawClockSplit_restrict_factorization {p : α × β → ℝ}
   let norm : (K.κ → ℝ) → ℝ × (K.κ → ℝ) := fun E =>
     (E b / t b, fun c => E c / t c - E b / t b)
   let raw : (K.κ → ℝ) → ℝ × (losingIndex K b → ℝ) := fun E =>
-    (E b, fun c => E c.1)
+    (E b, fun c => E c.val)
   let reconstruct : (ℝ × (K.κ → ℝ)) →
       ℝ × (losingIndex K b → ℝ) := fun sr =>
-    (t b * sr.1, fun c => t c.1 * (sr.2 c.1 + sr.1))
+    (t b * sr.1, fun c => t c.val * (sr.2 c.val + sr.1))
   let rawLose : (ℝ × (losingIndex K b → ℝ)) →
       ℝ × (losingIndex K b → ℝ) := fun sr =>
-    (t b * sr.1, fun c => t c.1 * (sr.2 c + sr.1))
+    (t b * sr.1, fun c => t c.val * (sr.2 c + sr.1))
   let scale : (ℝ × (losingIndex K b → ℝ)) →
       ℝ × (losingIndex K b → ℝ) := fun sr =>
-    (t b * sr.1, fun c => t c.1 * sr.2 c)
+    (t b * sr.1, fun c => t c.val * sr.2 c)
   let shift : (ℝ × (losingIndex K b → ℝ)) →
       ℝ × (losingIndex K b → ℝ) := fun ue =>
-    (ue.1, fun c => ue.1 * (t c.1 / t b) + ue.2 c)
+    (ue.1, fun c => ue.1 * (t c.val / t b) + ue.2 c)
   have hnorm : Measurable norm := by fun_prop
   have hraw : Measurable raw := by fun_prop
   have hreconstruct : Measurable reconstruct := by fun_prop
@@ -7823,14 +7813,14 @@ private lemma rawClockSplit_restrict_factorization {p : α × β → ℝ}
       field_simp [htb.ne']
     · funext c
       dsimp only [raw, reconstruct, norm, Function.comp_apply]
-      field_simp [htb.ne', (ht c.1).ne']
+      field_simp [htb.ne', (ht c.val).ne']
       ring
   have hrec_embed : reconstruct ∘ Prod.map id embed = rawLose := by
     funext sr
     apply Prod.ext
     · rfl
     · funext c
-      simp [reconstruct, rawLose, embed, insertWinnerZero, c.2]
+      simp [reconstruct, rawLose, embed, insertWinnerZero, c.property]
   have hlose_scale : rawLose = shift ∘ scale := by
     funext sr
     apply Prod.ext
@@ -7840,13 +7830,13 @@ private lemma rawClockSplit_restrict_factorization {p : α × β → ℝ}
       field_simp [htb.ne']
       ring
   have hscale_eq : scale = Prod.map (fun s : ℝ => t b * s)
-      (fun R : losingIndex K b → ℝ => fun c => t c.1 * R c) := by
+      (fun R : losingIndex K b → ℝ => fun c => t c.val * R c) := by
     funext sr
     rfl
   let : IsProbabilityMeasure (expMeasure 1) :=
     isProbabilityMeasure_expMeasure zero_lt_one
-  let (c : losingIndex K b) : IsProbabilityMeasure (expMeasure (t c.1)) :=
-    isProbabilityMeasure_expMeasure (ht c.1)
+  let (c : losingIndex K b) : IsProbabilityMeasure (expMeasure (t c.val)) :=
+    isProbabilityMeasure_expMeasure (ht c.val)
   let : IsProbabilityMeasure ρ := by
     dsimp [ρ, weightedLosingExcessLaw]
     infer_instance
@@ -7865,7 +7855,7 @@ private lemma rawClockSplit_restrict_factorization {p : α × β → ℝ}
     rw [map_smul_compat, map_mul_expMeasure_one htb]
     rfl
   have hsecond : Measure.map
-      (fun R : losingIndex K b → ℝ => fun c => t c.1 * R c) ρ =
+      (fun R : losingIndex K b → ℝ => fun c => t c.val * R c) ρ =
       losingReference K b := by
     dsimp [ρ, losingReference]
     exact map_weightedLosingExcess_scale t ht b
@@ -7898,7 +7888,7 @@ private lemma rawClockSplit_restrict_factorization {p : α × β → ℝ}
     _ = Measure.map shift
         ((Measure.map (fun s : ℝ => t b * s) A).prod
           (Measure.map
-            (fun R : losingIndex K b → ℝ => fun c => t c.1 * R c) ρ)) := by
+            (fun R : losingIndex K b → ℝ => fun c => t c.val * R c) ρ)) := by
       rw [hscale_eq, Measure.map_prod_map A ρ (by fun_prop) (by fun_prop)]
     _ = Measure.map shift
         ((ENNReal.ofReal (t b) • K.clockLawGiven b z).prod
@@ -7925,7 +7915,7 @@ private lemma clusterSeed_split_factorization {p : α × β → ℝ}
   have hs : 0 < K.sigma b z := K.sigma_pos b z hz
   let C : (K.κ → ℝ) → (K.κ → ℝ) := fun G c => Real.exp (-G c)
   let raw : (K.κ → ℝ) → ℝ × (losingIndex K b → ℝ) := fun E =>
-    (E b, fun c => E c.1)
+    (E b, fun c => E c.val)
   have hC : Measurable C := by fun_prop
   have hraw : Measurable raw := by fun_prop
   have hsplit : clusterClockSplit K b = raw ∘ C := by

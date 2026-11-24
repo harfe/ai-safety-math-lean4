@@ -3,8 +3,6 @@ module
 public import AISafetyMath.Solutions.MaxLotLot.Margin
 public import AISafetyMath.Solutions.MaxLotLot.CounterexampleCertificate
 
-set_option linter.style.header false
-
 /-!
 # The electorate of the counterexample
 
@@ -46,7 +44,7 @@ lemma V₀_univ : V₀ Set.univ = 31 := by
 
 instance : IsProbabilityMeasure ((31 : ENNReal)⁻¹ • V₀) := by
   constructor
-  rw [Measure.smul_apply, V₀_univ, smul_eq_mul, ENNReal.inv_mul_cancel] <;> norm_num
+  rw [smul_apply, V₀_univ, smul_eq_mul, ENNReal.inv_mul_cancel] <;> norm_num
 
 /-- The electorate: voters `u₁, u₂, u₃, u₄` with weights `(10, 10, 10, 1) / 31`. -/
 noncomputable def V : ProbabilityMeasure (Fin 3 → unitInterval) :=

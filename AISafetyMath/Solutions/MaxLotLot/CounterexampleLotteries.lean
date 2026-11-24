@@ -2,8 +2,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 
-set_option linter.style.header false
-
 /-!
 # Lotteries on three candidates
 

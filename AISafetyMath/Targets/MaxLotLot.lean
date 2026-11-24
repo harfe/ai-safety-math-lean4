@@ -10,7 +10,7 @@ that have to do with maximal lottery lotteries.
 This is work in progress and may contain some mistakes.
 Comments and descriptions may be lacking.
 
-Source: 
+Source:
  - https://www.lesswrong.com/s/gnAaZtdwjDBBRpDmw/p/CAKZsP2v7SqqEExz9
 
 The main conjecture is `main_conjecture`.
@@ -27,7 +27,7 @@ open ProbabilityTheory MeasureTheory
 
 namespace SymNashGame
 
-/-! 
+/-!
 zero-sum nash games.
 -/
 
@@ -36,13 +36,13 @@ variable [MeasurableSpace D]
 variable (f : D × D → ℝ)
 
 
-def Dominates (A B : ProbabilityMeasure D) : Prop := ∫ x, f x ∂(A.prod B).1 ≥ 0
+def Dominates (A B : ProbabilityMeasure D) : Prop := ∫ x, f x ∂(A.prod B).val ≥ 0
 
 /-- sanity check -/
 lemma integrable_of_meas_bounded (hmeas : Measurable f)
     (hbound : ∃ (cc : ℝ), ∀ x, abs (f x) < cc)
     (A B : ProbabilityMeasure D) :
-    Integrable f (A.prod B).1 := by
+    Integrable f (A.prod B).val := by
   sorry
 
 
@@ -121,7 +121,7 @@ section finiteVoters
 
 def HasFiniteVoters : Prop := ∃ (S : Set (C → unitInterval)), S.Finite ∧ V S = 1
 
-/-- Weakening of the main conjecture: 
+/-- Weakening of the main conjecture:
 The case of finitely many voters.
 -/
 def finiteVotersConjecture : Prop :=
@@ -155,6 +155,5 @@ theorem exists_of_finite_lot (D : Set (ProbabilityMeasure C))
   sorry
 
 end simplifications
-
 
 end MaxLotLot

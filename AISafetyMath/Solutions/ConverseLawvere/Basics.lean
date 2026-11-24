@@ -2,8 +2,6 @@ module
 
 public import Mathlib
 
-set_option linter.style.header false
-
 /-!
 Definitions of `AISafetyMath/Targets/ConverseLawvere.lean` (copied verbatim), and the theorems
 relating `HasLawvereDomainDiag` to the fixed point property.
@@ -113,7 +111,7 @@ theorem hasFixedPoints_unitInterval : HasFixedPoints unitInterval := by
   intro h
   have hc : Continuous fun t : unitInterval => (h t : ℝ) - t := by fun_prop
   have h0 : (0 : ℝ) ∈ Set.Icc ((h 1 : ℝ) - (1 : unitInterval)) ((h 0 : ℝ) - (0 : unitInterval)) :=
-    ⟨by simpa using (h 1).2.2, by simpa using (h 0).2.1⟩
+    ⟨by simpa using (h 1).property.2, by simpa using (h 0).property.1⟩
   obtain ⟨t, ht⟩ := intermediate_value_univ (1 : unitInterval) 0 hc h0
   exact ⟨t, Subtype.ext (sub_eq_zero.mp ht)⟩
 

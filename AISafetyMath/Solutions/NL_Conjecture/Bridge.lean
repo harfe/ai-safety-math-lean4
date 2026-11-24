@@ -150,33 +150,34 @@ private lemma ereal_coe_sum {ι : Type*} (s : Finset ι) (f : ι → ℝ) :
 
 /-- §4c, `ENNReal` side: each summand of `condEntropy` in real form. -/
 theorem condEntropy_term (P : ProbabilityMeasure (X × Y)) (x : X × Y) :
-    (↑(P.1 {x}) * ENNReal.log (P.1[{y : X × Y | y.1 = x.1} | {y : X × Y | y.2 = x.2}]) : EReal) =
+    (↑(P.val {x}) * ENNReal.log (P.val[{y : X × Y | y.1 = x.1} | {y : X × Y | y.2 = x.2}]) : EReal)
+      =
       ((-(pmfOfMeasure P x *
         Real.log ((P.toMeasure {y : X × Y | y.2 = x.2}).toReal / pmfOfMeasure P x)) : ℝ)
           : EReal) := by
-  have : IsProbabilityMeasure (P.1 : Measure (X × Y)) := P.2
+  have : IsProbabilityMeasure (P.val : Measure (X × Y)) := P.property
   have hinter : {y : X × Y | y.2 = x.2} ∩ {y : X × Y | y.1 = x.1} = {x} := by
     ext y; simp [Prod.ext_iff, and_comm]
-  have hmarg : P.toMeasure {y : X × Y | y.2 = x.2} = P.1 {y : X × Y | y.2 = x.2} := rfl
-  have hpm : pmfOfMeasure P x = (P.1 {x}).toReal := rfl
+  have hmarg : P.toMeasure {y : X × Y | y.2 = x.2} = P.val {y : X × Y | y.2 = x.2} := rfl
+  have hpm : pmfOfMeasure P x = (P.val {x}).toReal := rfl
   rw [ProbabilityTheory.cond_apply .of_discrete, hinter, hmarg, hpm]
-  rcases eq_or_ne (P.1 {x}) 0 with h0 | h0
+  rcases eq_or_ne (P.val {x}) 0 with h0 | h0
   · rw [h0]
     simp only [EReal.coe_ennreal_zero, ProbabilityMeasure.val_eq_to_measure, mul_zero,
         ENNReal.log_zero, zero_mul, ENNReal.toReal_zero, div_zero, Real.log_zero, neg_zero,
         EReal.coe_zero]
-  · have hvne : P.1 {y : X × Y | y.2 = x.2} ≠ 0 := by
-      refine fun h => h0 (le_zero_iff.mp (h ▸ measure_mono ?_))
+  · have hvne : P.val {y : X × Y | y.2 = x.2} ≠ 0 := by
+      refine fun h => h0 (nonpos_iff_eq_zero.mp (h ▸ measure_mono ?_))
       intro y hy; simp only [Set.mem_singleton_iff] at hy; simp [hy]
-    have hne : (P.1 {y : X × Y | y.2 = x.2})⁻¹ * P.1 {x} ≠ 0 :=
+    have hne : (P.val {y : X × Y | y.2 = x.2})⁻¹ * P.val {x} ≠ 0 :=
       mul_ne_zero (ENNReal.inv_ne_zero.mpr (measure_ne_top _ _)) h0
-    have htop : (P.1 {y : X × Y | y.2 = x.2})⁻¹ * P.1 {x} ≠ ⊤ :=
+    have htop : (P.val {y : X × Y | y.2 = x.2})⁻¹ * P.val {x} ≠ ⊤ :=
       ENNReal.mul_ne_top (ENNReal.inv_ne_top.mpr hvne) (measure_ne_top _ _)
     rw [ENNReal.log_pos_real hne htop, ENNReal.toReal_mul, ENNReal.toReal_inv,
       ← EReal.coe_ennreal_toReal (measure_ne_top _ _), ← EReal.coe_mul, EReal.coe_eq_coe_iff]
-    have hu : (0 : ℝ) < (P.1 {x}).toReal :=
+    have hu : (0 : ℝ) < (P.val {x}).toReal :=
       ENNReal.toReal_pos h0 (measure_ne_top _ _)
-    have hv : (0 : ℝ) < (P.1 {y : X × Y | y.2 = x.2}).toReal :=
+    have hv : (0 : ℝ) < (P.val {y : X × Y | y.2 = x.2}).toReal :=
       lt_of_lt_of_le hu (pmfOfMeasure_le_marginal P x)
     rw [Real.log_mul (by positivity) hu.ne', Real.log_inv, Real.log_div hv.ne' hu.ne']
     ring
@@ -312,7 +313,7 @@ theorem forkDistr_singleton (P : ProbabilityMeasure (A × B × C)) (x : A × B �
         P.toMeasure {y : A × B × C | y.1 = x.1 ∧ y.2.2 = x.2.2} /
         P.toMeasure {y : A × B × C | y.1 = x.1} := by
   have hA : P.toMeasure {y : A × B × C | y.1 = x.1} ≠ 0 := fun h =>
-    hx (le_zero_iff.mp (h ▸ measure_mono (singleton_subset x _ rfl)))
+    hx (nonpos_iff_eq_zero.mp (h ▸ measure_mono (singleton_subset x _ rfl)))
   have hint1 : {y : A × B × C | y.1 = x.1} ∩ {y : A × B × C | y.2.1 = x.2.1} =
       {y : A × B × C | y.1 = x.1 ∧ y.2.1 = x.2.1} := rfl
   have hint2 : {y : A × B × C | y.1 = x.1} ∩ {y : A × B × C | y.2.2 = x.2.2} =
@@ -339,7 +340,7 @@ theorem chainDistr_singleton (P : ProbabilityMeasure (A × B × C)) (x : A × B 
         P.toMeasure {y : A × B × C | y.2.1 = x.2.1 ∧ y.2.2 = x.2.2} /
         P.toMeasure {y : A × B × C | y.2.1 = x.2.1} := by
   have hA : P.toMeasure {y : A × B × C | y.1 = x.1} ≠ 0 := fun h =>
-    hx (le_zero_iff.mp (h ▸ measure_mono (singleton_subset x _ rfl)))
+    hx (nonpos_iff_eq_zero.mp (h ▸ measure_mono (singleton_subset x _ rfl)))
   have hint1 : {y : A × B × C | y.1 = x.1} ∩ {y : A × B × C | y.2.1 = x.2.1} =
       {y : A × B × C | y.1 = x.1 ∧ y.2.1 = x.2.1} := rfl
   have hint2 : {y : A × B × C | y.2.1 = x.2.1} ∩ {y : A × B × C | y.2.2 = x.2.2} =
@@ -365,9 +366,9 @@ theorem absolutelyContinuous_forkDistr (P : ProbabilityMeasure (A × B × C)) :
   refine absolutelyContinuous_of_singleton _ _ fun x h => ?_
   by_contra hx
   have hAB : P.toMeasure {y : A × B × C | y.1 = x.1 ∧ y.2.1 = x.2.1} ≠ 0 := fun h' =>
-    hx (le_zero_iff.mp (h' ▸ measure_mono (singleton_subset x _ ⟨rfl, rfl⟩)))
+    hx (nonpos_iff_eq_zero.mp (h' ▸ measure_mono (singleton_subset x _ ⟨rfl, rfl⟩)))
   have hAC : P.toMeasure {y : A × B × C | y.1 = x.1 ∧ y.2.2 = x.2.2} ≠ 0 := fun h' =>
-    hx (le_zero_iff.mp (h' ▸ measure_mono (singleton_subset x _ ⟨rfl, rfl⟩)))
+    hx (nonpos_iff_eq_zero.mp (h' ▸ measure_mono (singleton_subset x _ ⟨rfl, rfl⟩)))
   rw [forkDistr_singleton P x hx, ENNReal.div_eq_zero_iff] at h
   rcases h with h | h
   · exact (mul_ne_zero hAB hAC) h
@@ -380,9 +381,9 @@ theorem absolutelyContinuous_chainDistr (P : ProbabilityMeasure (A × B × C)) :
   refine absolutelyContinuous_of_singleton _ _ fun x h => ?_
   by_contra hx
   have hAB : P.toMeasure {y : A × B × C | y.1 = x.1 ∧ y.2.1 = x.2.1} ≠ 0 := fun h' =>
-    hx (le_zero_iff.mp (h' ▸ measure_mono (singleton_subset x _ ⟨rfl, rfl⟩)))
+    hx (nonpos_iff_eq_zero.mp (h' ▸ measure_mono (singleton_subset x _ ⟨rfl, rfl⟩)))
   have hBC : P.toMeasure {y : A × B × C | y.2.1 = x.2.1 ∧ y.2.2 = x.2.2} ≠ 0 := fun h' =>
-    hx (le_zero_iff.mp (h' ▸ measure_mono (singleton_subset x _ ⟨rfl, rfl⟩)))
+    hx (nonpos_iff_eq_zero.mp (h' ▸ measure_mono (singleton_subset x _ ⟨rfl, rfl⟩)))
   rw [chainDistr_singleton P x hx, ENNReal.div_eq_zero_iff] at h
   rcases h with h | h
   · exact (mul_ne_zero hAB hBC) h
@@ -445,8 +446,8 @@ theorem forkApproxError_eq_condMI {A B C : Type} [Finite A] [Finite B] [Finite C
   let _ : Fintype A := Fintype.ofFinite A
   let _ : Fintype B := Fintype.ofFinite B
   let _ : Fintype C := Fintype.ofFinite C
-  have : IsProbabilityMeasure (P.toMeasure) := P.2
-  have : IsProbabilityMeasure ((forkDistr P).toMeasure) := (forkDistr P).2
+  have : IsProbabilityMeasure (P.toMeasure) := P.property
+  have : IsProbabilityMeasure ((forkDistr P).toMeasure) := (forkDistr P).property
   -- the three "marginal" sets attached to a point, and the containment `{x} ⊆ ·`
   have hsubA : ∀ x : A × B × C, ({x} : Set (A × B × C)) ⊆ {y | y.1 = x.1} := by
     intro x y hy; simp only [Set.mem_singleton_iff] at hy; simp [hy]
@@ -516,8 +517,8 @@ theorem chainApproxError_eq_condMI {A B C : Type} [Finite A] [Finite B] [Finite 
   let _ : Fintype A := Fintype.ofFinite A
   let _ : Fintype B := Fintype.ofFinite B
   let _ : Fintype C := Fintype.ofFinite C
-  have : IsProbabilityMeasure (P.toMeasure) := P.2
-  have : IsProbabilityMeasure ((chainDistr P).toMeasure) := (chainDistr P).2
+  have : IsProbabilityMeasure (P.toMeasure) := P.property
+  have : IsProbabilityMeasure ((chainDistr P).toMeasure) := (chainDistr P).property
   -- the "marginal" sets attached to a point, and the containment `{x} ⊆ ·`
   have hsubA : ∀ x : A × B × C, ({x} : Set (A × B × C)) ⊆ {y | y.1 = x.1} := by
     intro x y hy; simp only [Set.mem_singleton_iff] at hy; simp [hy]

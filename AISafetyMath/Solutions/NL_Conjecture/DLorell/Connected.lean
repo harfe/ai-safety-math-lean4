@@ -60,7 +60,7 @@ attribute [instance] ComponentDecomp.fin ComponentDecomp.dec
 
 private def componentRel (S : Finset (α × β))
     (z z' : {z // z ∈ S}) : Prop :=
-  Relation.ReflTransGen (fun a b => Adj a.1 b.1) z z'
+  Relation.ReflTransGen (fun a b => Adj a.val b.val) z z'
 
 omit [Fintype α] [Fintype β] [DecidableEq α] [DecidableEq β] in
 private lemma adj_symm {z z' : α × β} (h : Adj z z') : Adj z' z := by
@@ -79,7 +79,7 @@ private noncomputable def componentSetoid (S : Finset (α × β)) :
     | refl => exact Relation.ReflTransGen.refl
     | tail hab hbc ih =>
         exact Relation.ReflTransGen.trans
-          (r := fun a b : {z // z ∈ S} => Adj a.1 b.1)
+          (r := fun a b : {z // z ∈ S} => Adj a.val b.val)
           (Relation.ReflTransGen.single (adj_symm hbc)) ih
 
 omit [DecidableEq α] [DecidableEq β] in
@@ -111,15 +111,15 @@ theorem exists_componentDecomp {p : α × β → ℝ} (hp : IsPMF p) :
   have ha_pos : ∀ i, 0 < a i := by
     intro i
     obtain ⟨z, hz⟩ := Quotient.exists_rep (eQ.symm i)
-    have hpz : 0 < p z.1 := by
-      have hpz_ne : p z.1 ≠ 0 := by simpa [S, support] using z.2
-      exact lt_of_le_of_ne (hp.nonneg z.1) (Ne.symm hpz_ne)
-    have hle : p z.1 ≤ push k p (k z.1) := by
+    have hpz : 0 < p z.val := by
+      have hpz_ne : p z.val ≠ 0 := by simpa [S, support] using z.property
+      exact lt_of_le_of_ne (hp.nonneg z.val) (Ne.symm hpz_ne)
+    have hle : p z.val ≤ push k p (k z.val) := by
       unfold push
       exact Finset.single_le_sum (fun w _ => hp.nonneg w) (by simp only [mem_filter, mem_univ,
           and_self])
-    have hk : k z.1 = eQ (Quotient.mk'' z : Q) := by
-      simp [k, z.2]
+    have hk : k z.val = eQ (Quotient.mk'' z : Q) := by
+      simp [k, z.property]
     have hi : eQ (Quotient.mk'' z : Q) = i := by
       calc
         eQ (Quotient.mk'' z : Q) = eQ (eQ.symm i) := congrArg eQ hz
@@ -174,20 +174,20 @@ theorem exists_componentDecomp {p : α × β → ℝ} (hp : IsPMF p) :
       simpa [k, zs, zs', hzS, hz'S] using hkz.trans hkz'.symm
     have hrel : componentRel S zs zs' := Quotient.exact hquot
     clear hquot hkz'
-    have aux : ∀ t : {z // z ∈ S}, componentRel S zs t → k zs.1 = i →
-        k t.1 = i ∧
+    have aux : ∀ t : {z // z ∈ S}, componentRel S zs t → k zs.val = i →
+        k t.val = i ∧
           Relation.ReflTransGen
             (fun u v => u ∈ support (q i) ∧ v ∈ support (q i) ∧ Adj u v)
-            zs.1 t.1 := by
+            zs.val t.val := by
       intro t ht hstart
       induction ht with
       | refl => exact ⟨hstart, Relation.ReflTransGen.refl⟩
       | @tail u v huv hadj ih =>
-          have hkv : k v.1 = i := (hsame_of_adj u.2 v.2 hadj).symm.trans ih.1
+          have hkv : k v.val = i := (hsame_of_adj u.property v.property hadj).symm.trans ih.1
           refine ⟨hkv, ih.2.tail ⟨?_, ?_, hadj⟩⟩
-          · exact (hsupp i u.1).2 ⟨u.2, ih.1⟩
-          · exact (hsupp i v.1).2 ⟨v.2, hkv⟩
-    have hstart : k zs.1 = i := by simpa [zs] using hkz
+          · exact (hsupp i u.val).2 ⟨u.property, ih.1⟩
+          · exact (hsupp i v.val).2 ⟨v.property, hkv⟩
+    have hstart : k zs.val = i := by simpa [zs] using hkz
     simpa [zs, zs'] using (aux zs' hrel hstart).2
   refine ⟨{
     κ := κ

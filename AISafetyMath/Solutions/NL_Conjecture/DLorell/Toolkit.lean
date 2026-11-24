@@ -630,7 +630,7 @@ private lemma exp_neg_Ici_lintegral_mesh_bound (N : ℕ) :
         Set.Ico ((k : ℝ) / ((N : ℝ) + 1)) (((k : ℝ) + 1) / ((N : ℝ) + 1)),
           ENNReal.ofReal (Real.exp (-x))) ≤
         ∑' k : ℕ, ENNReal.ofReal (((N : ℝ) + 1)⁻¹ * q ^ k) := by
-      apply ENNReal.tsum_le_tsum
+      apply tsum_le_tsum
       intro k
       calc
         (∫⁻ x : ℝ in
@@ -647,7 +647,7 @@ private lemma exp_neg_Ici_lintegral_mesh_bound (N : ℕ) :
           rw [setLIntegral_const, Real.volume_Ico]
           rw [← ENNReal.ofReal_mul (Real.exp_pos _).le]
           congr 1
-          rw [← Real.exp_nat_mul]
+          rw [← Real.exp_natCast_mul]
           field_simp
           ring
     _ = ENNReal.ofReal (∑' k : ℕ, ((N : ℝ) + 1)⁻¹ * q ^ k) :=

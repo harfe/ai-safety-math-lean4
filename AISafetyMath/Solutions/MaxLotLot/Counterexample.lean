@@ -3,8 +3,6 @@ module
 public import AISafetyMath.Solutions.MaxLotLot.CounterexampleProfile
 public import AISafetyMath.Solutions.MaxLotLot.CounterexampleLotteries
 
-set_option linter.style.header false
-
 /-!
 # A finite electorate with no maximal lottery-lottery
 

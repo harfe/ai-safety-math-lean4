@@ -108,13 +108,13 @@ end SeedSetup
 
 private lemma sum_ne_zero_subtype_eq {κ : Type*} [Fintype κ]
     (a f : κ → ℝ) (hf : ∀ i, a i = 0 → f i = 0) :
-    (∑ i : {i : κ // a i ≠ 0}, f i.1) = ∑ i, f i := by
+    (∑ i : {i : κ // a i ≠ 0}, f i.val) = ∑ i, f i := by
   classical
   have hsplit := Fintype.sum_subtype_add_sum_subtype (fun i => a i ≠ 0) f
-  have hzero : (∑ i : {i : κ // ¬ a i ≠ 0}, f i.1) = 0 := by
+  have hzero : (∑ i : {i : κ // ¬ a i ≠ 0}, f i.val) = 0 := by
     apply Finset.sum_eq_zero
     intro i _
-    exact hf i.1 (not_ne_iff.mp i.2)
+    exact hf i.val (not_ne_iff.mp i.property)
   rw [hzero, add_zero] at hsplit
   exact hsplit
 
@@ -129,13 +129,13 @@ theorem exists_seedSetup {p : α × β → ℝ} (hp : IsPMF p)
     ι := {v : L.ι // L.prior v ≠ 0}
     fin := inferInstance
     dec := inferInstance
-    prior := fun v => L.prior v.1
-    comp := fun v => L.comp v.1
+    prior := fun v => L.prior v.val
+    comp := fun v => L.comp v.val
     prior_isPMF := by
-      refine ⟨fun v => L.prior_isPMF.nonneg v.1, ?_⟩
+      refine ⟨fun v => L.prior_isPMF.nonneg v.val, ?_⟩
       rw [mass, sum_ne_zero_subtype_eq L.prior L.prior (fun _ h => h)]
       simpa [mass] using L.prior_isPMF.total
-    comp_isPMF := fun v => L.comp_isPMF v.1
+    comp_isPMF := fun v => L.comp_isPMF v.val
     mixture := by
       intro z
       rw [sum_ne_zero_subtype_eq L.prior
@@ -146,7 +146,7 @@ theorem exists_seedSetup {p : α × β → ℝ} (hp : IsPMF p)
       (∑ v, L'.prior v * Phi (L'.comp v)) =
         ∑ v, L.prior v * Phi (L.comp v) := by
     change (∑ v : {v : L.ι // L.prior v ≠ 0},
-      L.prior v.1 * Phi (L.comp v.1)) = ∑ v, L.prior v * Phi (L.comp v)
+      L.prior v.val * Phi (L.comp v.val)) = ∑ v, L.prior v * Phi (L.comp v)
     exact sum_ne_zero_subtype_eq L.prior
       (fun v => L.prior v * Phi (L.comp v)) (fun _ h => by simp [h])
   have hscore : L'.score = L.score := by
@@ -162,11 +162,11 @@ theorem exists_seedSetup {p : α × β → ℝ} (hp : IsPMF p)
     prior_pos := ?_
   }⟩
   · intro v _
-    change IsContact (support p) w (L.comp v.1)
-    exact hcontact v.1 v.2
+    change IsContact (support p) w (L.comp v.val)
+    exact hcontact v.val v.property
   · intro v
-    change 0 < L.prior v.1
-    exact lt_of_le_of_ne (L.prior_isPMF.nonneg v.1) (Ne.symm v.2)
+    change 0 < L.prior v.val
+    exact lt_of_le_of_ne (L.prior_isPMF.nonneg v.val) (Ne.symm v.property)
 
 /-! ### Definition 4.1 — the race at a fixed seed -/
 
@@ -473,17 +473,17 @@ lemma pi_exp_strictClockWin {κ : Type*} [Fintype κ]
       (fun x : {i : κ // i ≠ a} → ℝ => (x, y)) ⁻¹'
           ((g ∘ f) ⁻¹' {E : κ → ℝ | strictClockWin t a E}) =
         Set.pi Set.univ
-          (fun i : {i : κ // i ≠ a} => Set.Ioi (t i.1 / t a * y)) := by
+          (fun i : {i : κ // i ≠ a} => Set.Ioi (t i.val / t a * y)) := by
     ext x
     have hf_pair := (MeasurableEquiv.piOptionEquivProd
       (fun _ : Option {i : κ // i ≠ a} => ℝ)).apply_symm_apply (x, y)
     have hf_some (i : {i : κ // i ≠ a}) : f (x, y) (some i) = x i :=
       congrFun (congrArg Prod.fst hf_pair) i
     have hf_none : f (x, y) none = y := congrArg Prod.snd hf_pair
-    have he_i (i : {i : κ // i ≠ a}) : (g (f (x, y))) i.1 = x i := by
+    have he_i (i : {i : κ // i ≠ a}) : (g (f (x, y))) i.val = x i := by
       dsimp [g]
       rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply]
-      simp [e, Equiv.optionSubtypeNe_symm_of_ne i.2, hf_some]
+      simp [e, Equiv.optionSubtypeNe_symm_of_ne i.property, hf_some]
     have he_a : (g (f (x, y))) a = y := by
       dsimp [g]
       rw [MeasurableEquiv.coe_piCongrLeft, Equiv.piCongrLeft_apply]
@@ -492,12 +492,12 @@ lemma pi_exp_strictClockWin {κ : Type*} [Fintype κ]
       true_implies, Set.mem_Ioi]
     constructor
     · intro h i
-      have hrel := h i.1 i.2
-      change g (f (x, y)) a / t a < g (f (x, y)) i.1 / t i.1 at hrel
+      have hrel := h i.val i.property
+      change g (f (x, y)) a / t a < g (f (x, y)) i.val / t i.val at hrel
       rw [he_a, he_i] at hrel
-      have hcross : y * t i.1 < x i * t a :=
-        (div_lt_div_iff₀ (ht a) (ht i.1)).1 hrel
-      have hdiv : t i.1 * y / t a < x i :=
+      have hcross : y * t i.val < x i * t a :=
+        (div_lt_div_iff₀ (ht a) (ht i.val)).1 hrel
+      have hdiv : t i.val * y / t a < x i :=
         (div_lt_iff₀ (ht a)).2 (by nlinarith)
       simpa [div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm] using hdiv
     · intro h b hba
@@ -515,35 +515,35 @@ lemma pi_exp_strictClockWin {κ : Type*} [Fintype κ]
       rw [he_a, hib]
       exact (div_lt_div_iff₀ (ht a) (ht b)).2 hcross
   simp_rw [hsection, Measure.pi_pi]
-  let c : ℝ := ∑ i : {i : κ // i ≠ a}, t i.1 / t a
+  let c : ℝ := ∑ i : {i : κ // i ≠ a}, t i.val / t a
   have hsplit := Fintype.sum_eq_add_sum_subtype_ne t a
-  have hsubsum : (∑ i : {i : κ // i ≠ a}, t i.1) = 1 - t a := by
+  have hsubsum : (∑ i : {i : κ // i ≠ a}, t i.val) = 1 - t a := by
     linarith
   have hc : c = (1 - t a) / t a := by
     dsimp [c]
     rw [← Finset.sum_div, hsubsum]
   have hc_nonneg : 0 ≤ c := by
     dsimp [c]
-    exact Finset.sum_nonneg fun i _ => div_nonneg (ht i.1).le (ht a).le
+    exact Finset.sum_nonneg fun i _ => div_nonneg (ht i.val).le (ht a).le
   have hypos : ∀ᵐ y : ℝ ∂(expMeasure 1), 0 < y := by
     have hnot := measure_eq_zero_iff_ae_notMem.mp expMeasure_one_Iic_zero
     filter_upwards [hnot] with y hy
     simpa only [Set.mem_Iic, not_le] using hy
   have hprod : ∀ᵐ y : ℝ ∂(expMeasure 1),
       (∏ i : {i : κ // i ≠ a},
-          expMeasure 1 (Set.Ioi (t i.1 / t a * y))) =
+          expMeasure 1 (Set.Ioi (t i.val / t a * y))) =
         ENNReal.ofReal (Real.exp (-(c * y))) := by
     filter_upwards [hypos] with y hy
     simp_rw [expMeasure_one_Ioi _
       (mul_nonneg (div_nonneg (ht _).le (ht a).le) hy.le)]
     rw [← ENNReal.ofReal_prod_of_nonneg
-      (fun i _ => Real.exp_nonneg (-(t i.1 / t a * y))), ← Real.exp_sum]
+      (fun i _ => Real.exp_nonneg (-(t i.val / t a * y))), ← Real.exp_sum]
     congr 2
     dsimp [c]
     rw [Finset.sum_neg_distrib, Finset.sum_mul]
   calc
     (∫⁻ y, ∏ i : {i : κ // i ≠ a},
-        expMeasure 1 (Set.Ioi (t i.1 / t a * y)) ∂(expMeasure 1)) =
+        expMeasure 1 (Set.Ioi (t i.val / t a * y)) ∂(expMeasure 1)) =
         ∫⁻ y, ENNReal.ofReal (Real.exp (-(c * y))) ∂(expMeasure 1) :=
       lintegral_congr_ae hprod
     _ = ENNReal.ofReal (1 / (1 + c)) := expMeasure_one_laplace c hc_nonneg
@@ -655,7 +655,7 @@ noncomputable def lexMax {Ω ι : Type*} [Fintype ι] [DecidableEq ι]
     [Nonempty ι] (F : Ω → ι → ℝ) (ω : Ω) : ι :=
   (List.argmax (F ω) Finset.univ.toList).get (by
     rw [Option.isSome_iff_ne_none, Ne, List.argmax_eq_none]
-    simpa using (Finset.univ_nonempty : (Finset.univ : Finset ι).Nonempty).ne_empty)
+    simp)
 
 lemma lexMax_eq_iff {Ω ι : Type*} [Fintype ι] [DecidableEq ι]
     [Nonempty ι] (F : Ω → ι → ℝ) (ω : Ω) (a : ι) :
@@ -663,7 +663,7 @@ lemma lexMax_eq_iff {Ω ι : Type*} [Fintype ι] [DecidableEq ι]
   unfold lexMax
   let hsome : (List.argmax (F ω) Finset.univ.toList).isSome := by
     rw [Option.isSome_iff_ne_none, Ne, List.argmax_eq_none]
-    simpa using (Finset.univ_nonempty : (Finset.univ : Finset ι).Nonempty).ne_empty
+    simp
   constructor
   · intro h
     exact (Option.some_get hsome).symm.trans (congrArg some h)
@@ -2744,7 +2744,7 @@ lemma seedLaw_lexWinner_measure (z : α × β) (hz : 0 < p z)
   calc
     clockLaw D.L.ι (F ⁻¹' {ε | lexWinner D ε z = a}) =
         clockLaw D.L.ι {E | strictClockWin (fun i => D.post i z) a E} :=
-      measure_congr (hae.mono fun E h => propext h)
+      measure_congr hae
     _ = ENNReal.ofReal (D.post a z) := by
       unfold clockLaw
       exact pi_exp_strictClockWin (fun i => D.post i z)

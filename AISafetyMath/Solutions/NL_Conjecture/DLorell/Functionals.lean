@@ -166,7 +166,7 @@ carries `IsPMF p`. -/
 noncomputable def tau (p : α × β → ℝ) : ℝ := ⨅ V : Latent p, V.score
 
 /-- `T(p) := inf over deterministic `A = f(X,Y)` of `S_p(A)` (Main Theorem). -/
-noncomputable def T (p : α × β → ℝ) : ℝ := ⨅ V : {V : Latent p // V.IsDet}, V.1.score
+noncomputable def T (p : α × β → ℝ) : ℝ := ⨅ V : {V : Latent p // V.IsDet}, V.val.score
 
 /-- Conditional mutual information as a difference of conditional
 entropies. -/
@@ -262,8 +262,8 @@ lemma tau_le_score {p : α × β → ℝ} (V : Latent p) : tau p ≤ V.score := 
 how §12 uses `T`: Corollary 4.4 exhibits one good seed. -/
 lemma T_le_score {p : α × β → ℝ} (V : Latent p) (hV : V.IsDet) : T p ≤ V.score := by
   unfold T
-  have hb : BddBelow (Set.range fun W : {W : Latent p // W.IsDet} => W.1.score) :=
-    ⟨0, by rintro _ ⟨W, rfl⟩; exact W.1.score_nonneg⟩
+  have hb : BddBelow (Set.range fun W : {W : Latent p // W.IsDet} => W.val.score) :=
+    ⟨0, by rintro _ ⟨W, rfl⟩; exact W.val.score_nonneg⟩
   exact ciInf_le_of_le hb ⟨V, hV⟩ le_rfl
 
 end stoch_to_det

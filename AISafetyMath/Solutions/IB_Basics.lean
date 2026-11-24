@@ -227,8 +227,8 @@ lemma expIB_has_max (Θ : Credal X) (f : X → ℝ)
     ProbabilityMeasure.continuous_integral_boundedContinuousFunction
       (BoundedContinuousFunction.mkOfCompact ⟨f, hf⟩)
   -- hence the set of values is a nonempty compact set, and its `sSup` is attained
-  have himg := Θ.1.isCompact'.image hcont
-  obtain ⟨y, hy⟩ := himg.exists_isGreatest (Θ.1.nonempty'.image _)
+  have himg := Θ.val.isCompact'.image hcont
+  obtain ⟨y, hy⟩ := himg.exists_isGreatest (Θ.val.nonempty'.image _)
   obtain ⟨θ, hθ, rfl⟩ := hy.1
   exact ⟨θ, hθ, hy.csSup_eq⟩
 
@@ -268,7 +268,7 @@ lemma exists_mem_dist_lt (Θ₁ Θ₂ : Credal X) {r : ℝ} (hr : dist Θ₁ Θ�
     ∃ θ' ∈ Θ₂.carrier, dist θ θ' < r := by
   refine Metric.exists_dist_lt_of_hausdorffDist_lt hθ hr ?_
   exact Metric.hausdorffEDist_ne_top_of_nonempty_of_bounded Θ₁.nonempty Θ₂.nonempty
-    Θ₁.1.isCompact'.isBounded Θ₂.1.isCompact'.isBounded
+    Θ₁.val.isCompact'.isBounded Θ₂.val.isCompact'.isBounded
 
 /--
 Lemma: `expIB` is continuous in `Θ`
@@ -335,10 +335,11 @@ lemma expCCL_mem_unitInterval (Λ : Policy A O → Credal (Destiny A O)) (π : P
   have key : ∀ y ∈ (fun θ : Δ (Destiny A O) => ∫ x, (Subtype.val ∘ L) x ∂θ.toMeasure) ''
       (Λ π).carrier, 0 ≤ y ∧ y ≤ 1 := by
     rintro y ⟨θ, -, rfl⟩
-    refine ⟨integral_nonneg fun x => (L x).2.1, ?_⟩
+    refine ⟨integral_nonneg fun x => (L x).property.1, ?_⟩
     by_cases hi : Integrable (fun x => ((L x : ℝ))) θ.toMeasure
     · calc ∫ x, (Subtype.val ∘ L) x ∂θ.toMeasure
-          ≤ ∫ _x, (1 : ℝ) ∂θ.toMeasure := integral_mono hi (integrable_const 1) fun x => (L x).2.2
+          ≤ ∫ _x, (1 : ℝ) ∂θ.toMeasure := integral_mono hi (integrable_const 1) fun x => (L
+            x).property.2
         _ = 1 := by simp
     · change ∫ x, ((L x : ℝ)) ∂θ.toMeasure ≤ 1
       rw [integral_undef hi]
@@ -381,7 +382,7 @@ lemma continuous_expCCL (Λ : Policy A O → Credal (Destiny A O))
     Continuous (expCCL L Λ) := by
   -- `expCCL L Λ = (fun Θ => expIB Θ (Subtype.val ∘ L)) ∘ Λ`: the outer map is continuous in the
   -- credal set (`expIB_continuous_in_credal`), the inner one is Proposition 1.
-  exact (expIB_continuous_in_credal _ (continuous_subtype_val.comp hL)).comp
+  exact (expIB_continuous_in_credal _ (continuous_subtypeVal.comp hL)).comp
     (continuous_of_CCL Λ hCCL)
 
 /- The Bayes integrand is integrable: it is `[0,1]`-valued, and measurable because `I` carries

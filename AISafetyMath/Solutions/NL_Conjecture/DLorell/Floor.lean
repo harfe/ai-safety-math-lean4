@@ -1352,7 +1352,7 @@ noncomputable def rhoHGR (q : α × β → ℝ) : ℝ :=
   ⨆ fg : {fg : (α → ℝ) × (β → ℝ) //
       (∑ x, mX q x * fg.1 x = 0) ∧ (∑ y, mY q y * fg.2 y = 0) ∧
       (∑ x, mX q x * fg.1 x ^ 2 = 1) ∧ (∑ y, mY q y * fg.2 y ^ 2 = 1)},
-    ∑ z, q z * fg.1.1 z.1 * fg.1.2 z.2
+    ∑ z, q z * fg.val.1 z.1 * fg.val.2 z.2
 
 private lemma correlation_le_one {q : α × β → ℝ} (hq : IsPMF q)
     {f : α → ℝ} {g : β → ℝ}
@@ -1399,10 +1399,10 @@ private lemma correlation_le_rhoHGR {q : α × β → ℝ} (hq : IsPMF q)
   have hbdd : BddAbove (Set.range fun uv : {fg : (α → ℝ) × (β → ℝ) //
       (∑ x, mX q x * fg.1 x = 0) ∧ (∑ y, mY q y * fg.2 y = 0) ∧
       (∑ x, mX q x * fg.1 x ^ 2 = 1) ∧ (∑ y, mY q y * fg.2 y ^ 2 = 1)} =>
-      ∑ z, q z * uv.1.1 z.1 * uv.1.2 z.2) := by
+      ∑ z, q z * uv.val.1 z.1 * uv.val.2 z.2) := by
     refine ⟨1, ?_⟩
     rintro _ ⟨uv, rfl⟩
-    exact correlation_le_one hq uv.2.2.2.1 uv.2.2.2.2
+    exact correlation_le_one hq uv.property.2.2.1 uv.property.2.2.2
   unfold rhoHGR
   exact le_ciSup hbdd fg
 
@@ -1478,36 +1478,36 @@ private lemma exists_hgr_maximizer {q : α × β → ℝ} (hq : IsPMF q)
           exact Finset.single_le_sum (fun x _ => hq.nonneg (x, z.2)) (Finset.mem_univ z.1)
         exact hqpos.trans_le hyle
       simp [cf, cg, hxpos.ne', hypos.ne']
-  have hcanon_C (u : I) : canon u.1 ∈ C := by
+  have hcanon_C (u : I) : canon u.val ∈ C := by
     dsimp [C, canon]
-    exact ⟨(hcf_mean u.1.1).trans u.2.1,
-      (hcg_mean u.1.2).trans u.2.2.1,
-      (hcf_sq u.1.1).trans u.2.2.2.1,
-      (hcg_sq u.1.2).trans u.2.2.2.2⟩
-  have hcanon_box (u : I) : canon u.1 ∈ KX ×ˢ KY := by
-    have hcfzero : ∀ x, mX q x = 0 → cf u.1.1 x = 0 := by
+    exact ⟨(hcf_mean u.val.1).trans u.property.1,
+      (hcg_mean u.val.2).trans u.property.2.1,
+      (hcf_sq u.val.1).trans u.property.2.2.1,
+      (hcg_sq u.val.2).trans u.property.2.2.2⟩
+  have hcanon_box (u : I) : canon u.val ∈ KX ×ˢ KY := by
+    have hcfzero : ∀ x, mX q x = 0 → cf u.val.1 x = 0 := by
       intro x hx
       simp [cf, hx]
-    have hcgzero : ∀ y, mY q y = 0 → cg u.1.2 y = 0 := by
+    have hcgzero : ∀ y, mY q y = 0 → cg u.val.2 y = 0 := by
       intro y hy
       simp [cg, hy]
-    have hfb (x : α) : |cf u.1.1 x| ≤ BX x := by
+    have hfb (x : α) : |cf u.val.1 x| ≤ BX x := by
       dsimp [BX]
       exact abs_le_one_add_inv_of_weighted_sq_sum_eq_one
-        (isPMF_push hq).nonneg ((hcf_sq u.1.1).trans u.2.2.2.1) hcfzero x
-    have hgb (y : β) : |cg u.1.2 y| ≤ BY y := by
+        (isPMF_push hq).nonneg ((hcf_sq u.val.1).trans u.property.2.2.1) hcfzero x
+    have hgb (y : β) : |cg u.val.2 y| ≤ BY y := by
       dsimp [BY]
       exact abs_le_one_add_inv_of_weighted_sq_sum_eq_one
-        (isPMF_push hq).nonneg ((hcg_sq u.1.2).trans u.2.2.2.2) hcgzero y
+        (isPMF_push hq).nonneg ((hcg_sq u.val.2).trans u.property.2.2.2) hcgzero y
     constructor
     · rw [Set.mem_pi]
       intro x _
       constructor <;> dsimp [canon] <;>
-        nlinarith [hfb x, le_abs_self (cf u.1.1 x), neg_le_abs (cf u.1.1 x)]
+        nlinarith [hfb x, le_abs_self (cf u.val.1 x), neg_le_abs (cf u.val.1 x)]
     · rw [Set.mem_pi]
       intro y _
       constructor <;> dsimp [canon] <;>
-        nlinarith [hgb y, le_abs_self (cg u.1.2 y), neg_le_abs (cg u.1.2 y)]
+        nlinarith [hgb y, le_abs_self (cg u.val.2 y), neg_le_abs (cg u.val.2 y)]
   have hKX : IsCompact KX := by
     dsimp [KX]
     exact isCompact_univ_pi fun x => isCompact_Icc
@@ -1546,11 +1546,11 @@ private lemma exists_hgr_maximizer {q : α × β → ℝ} (hq : IsPMF q)
     exact (hKX.prod hKY).inter_right hC
   have hKne : K.Nonempty := by
     let u : I := Classical.choice hI
-    exact ⟨canon u.1, hcanon_box u, hcanon_C u⟩
+    exact ⟨canon u.val, hcanon_box u, hcanon_C u⟩
   have hobjective : Continuous objective := by fun_prop
   obtain ⟨fg, hfgK, hfgmax⟩ := hK.exists_isMaxOn hKne hobjective.continuousOn
-  have hupper (u : I) : objective u.1 ≤ objective fg := by
-    rw [← hcanon_objective u.1]
+  have hupper (u : I) : objective u.val ≤ objective fg := by
+    rw [← hcanon_objective u.val]
     exact hfgmax ⟨hcanon_box u, hcanon_C u⟩
   have hfgC : fg ∈ C := hfgK.2
   have hconstraints :
@@ -1562,7 +1562,7 @@ private lemma exists_hgr_maximizer {q : α × β → ℝ} (hq : IsPMF q)
     exact correlation_le_rhoHGR hq hconstraints.1 hconstraints.2.1
       hconstraints.2.2.1 hconstraints.2.2.2
   have hge : rhoHGR q ≤ objective fg := by
-    change (⨆ u : I, objective u.1) ≤ objective fg
+    change (⨆ u : I, objective u.val) ≤ objective fg
     exact ciSup_le hupper
   refine ⟨fg.1, fg.2, hconstraints.1, hconstraints.2.1,
     hconstraints.2.2.1, hconstraints.2.2.2, ?_⟩

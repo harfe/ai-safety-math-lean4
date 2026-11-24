@@ -62,7 +62,7 @@ private theorem klDiv_smul_restrict {Ω : Type*} [MeasurableSpace Ω]
     filter_upwards [hμν.ae_le hrn, hmem] with x hx hxs
     rw [llr, hx]
     simp [Set.indicator_of_mem hxs]
-  rw [toReal_klDiv_of_measure_eq hμν (by simp [μ]), integral_congr_ae hllr]
+  rw [toReal_klDiv_of_measure_eq hμν (by rw [measure_univ, measure_univ]), integral_congr_ae hllr]
   simp only [integral_const, probReal_univ, smul_eq_mul, one_mul]
 
 private theorem map_expMeasure_add_eq_smul_restrict {a : ℝ} (ha : 0 ≤ a) :

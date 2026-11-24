@@ -111,7 +111,7 @@ instance instCredalMetric : MetricSpace (Credal X) := Subtype.metricSpace
 namespace Credal
 
 /-- Get the set itself -/
-def carrier (s : Credal X) := s.1.carrier
+def carrier (s : Credal X) := s.val.carrier
 
 /- Confirming that the metric on `Credal X` is the Hausdorff distance.
 We do not redefine Hausdorff distance manually.
@@ -123,8 +123,8 @@ example (s t : Credal X) :
 matches our definition of Hausdorff distance.
 -/
 lemma dist_is_hausdorff (s t : Credal X) :
-    dist s t = max (⨆ (x : s.carrier), ⨅ (y : t.carrier), dist x.1 y.1)
-    (⨆ (y : t.carrier), ⨅ (x : s.carrier), dist y.1 x.1) := by
+    dist s t = max (⨆ (x : s.carrier), ⨅ (y : t.carrier), dist x.val y.val)
+    (⨆ (y : t.carrier), ⨅ (x : s.carrier), dist y.val x.val) := by
   sorry
 
 /-- construct a credal set from a closed convex set -/

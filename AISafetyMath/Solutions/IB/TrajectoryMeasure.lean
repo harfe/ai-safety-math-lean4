@@ -36,7 +36,7 @@ abbrev Destiny := ℕ → (A × O)
 
 -- helper function. Oldest appear first in the list
 def initialSegment (h : Destiny A O) (n : ℕ) :
-    History A O := List.ofFn (fun (i: Fin n)  => h i.1)
+    History A O := List.ofFn (fun (i: Fin n)  => h i.val)
 
 /- Defining momentary loss as functions that map histories to `unitInterval`.
 (Mathlib defines `unitInterval : Set ℝ` as `Set.Icc 0 1`)
@@ -72,21 +72,22 @@ For `t = 0`, the summand is `L` on the empty History
 -/
 noncomputable def totalLoss (L : MomentaryLoss A O)
       (γ : discount) : Destiny A O → ℝ :=
-        fun h => (1 - γ.1) * ∑' (t : ℕ), γ.1 ^ t * L (initialSegment A O h t)
+        fun h => (1 - γ.val) * ∑' (t : ℕ), γ.val ^ t * L (initialSegment A O h t)
 
 -- Sanity check: the infinite sum exists.
 lemma totalLoss_summable (L : MomentaryLoss A O) (γ : discount)
       (h : Destiny A O) : Summable
-        (fun t => γ.1 ^ t * L (initialSegment A O h t)) := by
-  apply Summable.of_nonneg_of_le (f := fun t => γ.1 ^ t)
+        (fun t => γ.val ^ t * L (initialSegment A O h t)) := by
+  apply Summable.of_nonneg_of_le (f := fun t => γ.val ^ t)
   · intro t
-    exact mul_nonneg (pow_nonneg γ.2.1 t) (L (initialSegment A O h t)).2.1
+    exact mul_nonneg (pow_nonneg γ.property.1 t) (L (initialSegment A O h t)).property.1
   · intro t
-    calc γ.1 ^ t * (L (initialSegment A O h t)).1
-        ≤ γ.1 ^ t * 1 :=
-          mul_le_mul_of_nonneg_left (L (initialSegment A O h t)).2.2 (pow_nonneg γ.2.1 t)
-      _ = γ.1 ^ t := mul_one _
-  · exact summable_geometric_of_lt_one γ.2.1 γ.2.2
+    calc γ.val ^ t * (L (initialSegment A O h t)).val
+        ≤ γ.val ^ t * 1 :=
+          mul_le_mul_of_nonneg_left (L (initialSegment A O h t)).property.2 (pow_nonneg γ.property.1
+            t)
+      _ = γ.val ^ t := mul_one _
+  · exact summable_geometric_of_lt_one γ.property.1 γ.property.2
 
 
 -- Sanity check: total loss is in the
@@ -95,31 +96,33 @@ lemma totalLoss_summable (L : MomentaryLoss A O) (γ : discount)
 lemma totalLoss_constant (c : unitInterval) (γ : discount)
     (h : Destiny A O) : totalLoss (fun _ => c) γ h = c := by
   unfold totalLoss
-  rw [tsum_mul_right, tsum_geometric_of_lt_one γ.2.1 γ.2.2, ← mul_assoc,
-    mul_inv_cancel₀ (sub_ne_zero.mpr (ne_of_lt γ.2.2).symm), one_mul]
+  rw [tsum_mul_right, tsum_geometric_of_lt_one γ.property.1 γ.property.2, ← mul_assoc,
+    mul_inv_cancel₀ (sub_ne_zero.mpr (ne_of_lt γ.property.2).symm), one_mul]
 
 -- Sanity check: totalLoss is nonnegative.
 lemma totalLoss_nonneg (L : MomentaryLoss A O) (γ : discount) (h : Destiny A O) :
     0 ≤ totalLoss L γ h :=
-  mul_nonneg (by linarith [γ.2.2]) (tsum_nonneg fun t =>
-    mul_nonneg (pow_nonneg γ.2.1 t) (L (initialSegment A O h t)).2.1)
+  mul_nonneg (by linarith [γ.property.2]) (tsum_nonneg fun t =>
+    mul_nonneg (pow_nonneg γ.property.1 t) (L (initialSegment A O h t)).property.1)
 
 -- Sanity check: totalLoss is at most one.
 lemma totalLoss_le_one (L : MomentaryLoss A O) (γ : discount) (h : Destiny A O) :
     totalLoss L γ h ≤ 1 := by
-  have hsum_le : ∑' t, γ.1 ^ t * (L (initialSegment A O h t)).1 ≤ ∑' t, γ.1 ^ t := by
+  have hsum_le : ∑' t, γ.val ^ t * (L (initialSegment A O h t)).val ≤ ∑' t, γ.val ^ t := by
     apply Summable.tsum_le_tsum _ (totalLoss_summable L γ h)
-      (summable_geometric_of_lt_one γ.2.1 γ.2.2)
+      (summable_geometric_of_lt_one γ.property.1 γ.property.2)
     intro t
-    calc γ.1 ^ t * (L (initialSegment A O h t)).1
-        ≤ γ.1 ^ t * 1 :=
-          mul_le_mul_of_nonneg_left (L (initialSegment A O h t)).2.2 (pow_nonneg γ.2.1 t)
-      _ = γ.1 ^ t := mul_one _
+    calc γ.val ^ t * (L (initialSegment A O h t)).val
+        ≤ γ.val ^ t * 1 :=
+          mul_le_mul_of_nonneg_left (L (initialSegment A O h t)).property.2 (pow_nonneg γ.property.1
+            t)
+      _ = γ.val ^ t := mul_one _
   unfold totalLoss
-  calc (1 - γ.1) * ∑' t, γ.1 ^ t * (L (initialSegment A O h t)).1
-      ≤ (1 - γ.1) * ∑' t, γ.1 ^ t := mul_le_mul_of_nonneg_left hsum_le (by linarith [γ.2.2])
-    _ = (1 - γ.1) * (1 - γ.1)⁻¹ := by rw [tsum_geometric_of_lt_one γ.2.1 γ.2.2]
-    _ = 1 := mul_inv_cancel₀ (sub_ne_zero.mpr (ne_of_lt γ.2.2).symm)
+  calc (1 - γ.val) * ∑' t, γ.val ^ t * (L (initialSegment A O h t)).val
+      ≤ (1 - γ.val) * ∑' t, γ.val ^ t := mul_le_mul_of_nonneg_left hsum_le (by linarith
+        [γ.property.2])
+    _ = (1 - γ.val) * (1 - γ.val)⁻¹ := by rw [tsum_geometric_of_lt_one γ.property.1 γ.property.2]
+    _ = 1 := mul_inv_cancel₀ (sub_ne_zero.mpr (ne_of_lt γ.property.2).symm)
 
 -- Sanity check: totalLoss has values in `unitInterval`.
 lemma totalLoss_mem_unitInterval (L : MomentaryLoss A O) (γ : discount)
@@ -160,7 +163,7 @@ lemma measureAfterHist_marginal_fst (π : Policy A O)
   unfold measureAfterHist
   have hk : IsMarkovKernel
       { toFun := fun a => (μ h a).toMeasure, measurable' := Measurable.of_discrete } :=
-    ⟨fun a => (μ h a).2⟩
+    ⟨fun a => (μ h a).property⟩
   exact Measure.fst_compProd (π h).toMeasure _
 
 
@@ -169,7 +172,7 @@ instance instProbMeasAfterHist (π : Policy A O) (μ : Environment A O) (h : His
     : IsProbabilityMeasure (measureAfterHist π μ h) := by
   have hk : IsMarkovKernel
       { toFun := fun a => (μ h a).toMeasure, measurable' := Measurable.of_discrete } :=
-    ⟨fun a => (μ h a).2⟩
+    ⟨fun a => (μ h a).property⟩
   exact Measure.instIsProbabilityMeasureProdCompProdOfIsMarkovKernel
 
 
@@ -225,7 +228,7 @@ lemma measureAfterHist_singleton (π : Policy A O) (μ : Environment A O)
     ext ⟨a', o'⟩; simp [Prod.ext_iff]
   have hk : IsMarkovKernel
       ({ toFun := fun a' => (μ h a').toMeasure, measurable' := .of_discrete } : Kernel A O) :=
-    ⟨fun a' => (μ h a').2⟩
+    ⟨fun a' => (μ h a').property⟩
   rw [measureAfterHist, hprod,
     Measure.compProd_apply_prod (measurableSet_singleton _) (measurableSet_singleton _),
     MeasureTheory.lintegral_singleton,
@@ -252,7 +255,7 @@ lemma trajectoryMeasure_map_frestrictLe_zero (π : Policy A O) (μ : Environment
   · intro hx; rw [← hx, huniq, uniqueElim_default]
   · intro hx; funext i
     rw [show i = ⟨0, Finset.mem_Iic.mpr le_rfl⟩ from
-      Subtype.ext (Nat.le_zero.mp (Finset.mem_Iic.mp i.2)), huniq, uniqueElim_default, hx,
+      Subtype.ext (Nat.le_zero.mp (Finset.mem_Iic.mp i.property)), huniq, uniqueElim_default, hx,
       huniq]
 
 /- helper: the `(k+1)`-marginal singleton mass factors as the `k`-marginal mass
@@ -281,9 +284,9 @@ lemma trajectoryMeasure_map_frestrictLe_succ (π : Policy A O) (μ : Environment
       simp only [Function.comp_apply, hx]
     · rintro ⟨h1, h2⟩
       funext i
-      rcases eq_or_lt_of_le (Finset.mem_Iic.mp i.2) with hi | hi
+      rcases eq_or_lt_of_le (Finset.mem_Iic.mp i.property) with hi | hi
       · rw [show i = ⟨k + 1, Finset.mem_Iic.mpr le_rfl⟩ from Subtype.ext hi]; exact h2
-      · have := congrFun h1 ⟨i.1, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp hi)⟩
+      · have := congrFun h1 ⟨i.val, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp hi)⟩
         simpa only [Preorder.frestrictLe_apply, Preorder.frestrictLe₂_apply] using this
   rw [trajectoryMeasure,
     Measure.map_apply (Preorder.measurable_frestrictLe _) (measurableSet_singleton _), hset,
@@ -298,13 +301,15 @@ lemma trajectoryMeasure_map_frestrictLe_singleton (π : Policy A O) (μ : Enviro
     (n : ℕ) (ω : (i : Finset.Iic n) → A × O) :
     ((trajectoryMeasure π μ).map (Preorder.frestrictLe n)) {ω}
       = ∏ t : Fin (n + 1),
-          π (List.ofFn fun i : Fin t.1 =>
-              ω ⟨i.1, Finset.mem_Iic.mpr (le_of_lt (lt_of_lt_of_le i.2 (Nat.lt_succ_iff.mp t.2)))⟩)
-            {(ω ⟨t.1, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp t.2)⟩).1}
-          * μ (List.ofFn fun i : Fin t.1 =>
-              ω ⟨i.1, Finset.mem_Iic.mpr (le_of_lt (lt_of_lt_of_le i.2 (Nat.lt_succ_iff.mp t.2)))⟩)
-            (ω ⟨t.1, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp t.2)⟩).1
-            {(ω ⟨t.1, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp t.2)⟩).2} := by
+          π (List.ofFn fun i : Fin t.val =>
+              ω ⟨i.val, Finset.mem_Iic.mpr (le_of_lt (lt_of_lt_of_le i.isLt (Nat.lt_succ_iff.mp
+                t.isLt)))⟩)
+            {(ω ⟨t.val, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp t.isLt)⟩).1}
+          * μ (List.ofFn fun i : Fin t.val =>
+              ω ⟨i.val, Finset.mem_Iic.mpr (le_of_lt (lt_of_lt_of_le i.isLt (Nat.lt_succ_iff.mp
+                t.isLt)))⟩)
+            (ω ⟨t.val, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp t.isLt)⟩).1
+            {(ω ⟨t.val, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp t.isLt)⟩).2} := by
   induction n with
   | zero =>
     rw [trajectoryMeasure_map_frestrictLe_zero, measureAfterHist_singleton,
@@ -322,8 +327,8 @@ lemma trajectoryMeasure_cylinder (π : Policy A O) (μ : Environment A O)
     (h : History A O) :
     (trajectoryMeasure π μ) {d | initialSegment A O d h.length = h}
     = ∏ (t : Fin h.length),
-    π (h.take t.1) {(h.get t).1} *
-    μ (h.take t.1) (h.get t).1 {(h.get t).2} := by
+    π (h.take t.val) {(h.get t).1} *
+    μ (h.take t.val) (h.get t).1 {(h.get t).2} := by
   match h with
   | [] =>
     have hset : {d : Destiny A O |
@@ -334,7 +339,7 @@ lemma trajectoryMeasure_cylinder (π : Policy A O) (μ : Environment A O)
     simp
   | z :: hs =>
     set ω : (i : Finset.Iic hs.length) → A × O :=
-      fun i => (z :: hs).get ⟨i.1, Nat.lt_succ_iff.mpr (Finset.mem_Iic.mp i.2)⟩ with hω
+      fun i => (z :: hs).get ⟨i.val, Nat.lt_succ_iff.mpr (Finset.mem_Iic.mp i.property)⟩ with hω
     have hset : {d : Destiny A O | initialSegment A O d (z :: hs).length = z :: hs}
         = Preorder.frestrictLe (π := fun _ : ℕ => A × O) hs.length ⁻¹' {ω} := by
       ext d
@@ -342,8 +347,8 @@ lemma trajectoryMeasure_cylinder (π : Policy A O) (μ : Environment A O)
       constructor
       · intro hd
         funext i
-        have hi : i.1 < (z :: hs).length := Nat.lt_succ_iff.mpr (Finset.mem_Iic.mp i.2)
-        have hg := List.get_of_eq hd.symm ⟨i.1, hi⟩
+        have hi : i.val < (z :: hs).length := Nat.lt_succ_iff.mpr (Finset.mem_Iic.mp i.property)
+        have hg := List.get_of_eq hd.symm ⟨i.val, hi⟩
         simp only [initialSegment, List.get_ofFn] at hg
         simp only [hω, Preorder.frestrictLe_apply]
         exact hg.symm
@@ -359,12 +364,12 @@ lemma trajectoryMeasure_cylinder (π : Policy A O) (μ : Environment A O)
     congr 1
     apply Finset.prod_congr rfl
     intro t _
-    rw [← Fin.ofFn_take_get (z :: hs) (le_of_lt t.2)]
+    rw [← Fin.ofFn_take_get (z :: hs) (le_of_lt t.isLt)]
     rfl
 
 /- helper: the history encoded by a finite-coordinate configuration `ω : Iic n → A × O`. -/
 def historyOfConfig (n : ℕ) (ω : (i : Finset.Iic n) → A × O) : History A O :=
-  List.ofFn (fun i : Fin (n + 1) => ω ⟨i.1, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp i.2)⟩)
+  List.ofFn (fun i : Fin (n + 1) => ω ⟨i.val, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp i.isLt)⟩)
 
 omit [Finite A] [Finite O] [MeasurableSpace A] [MeasurableSpace O]
   [DiscreteMeasurableSpace A] [DiscreteMeasurableSpace O] in
@@ -389,10 +394,10 @@ lemma frestrictLe_singleton_eq_cylinder (n : ℕ) (ω : (i : Finset.Iic n) → A
   constructor
   · intro hd
     exact List.ofFn_inj.mpr (funext fun i =>
-      congrFun hd ⟨i.1, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp i.2)⟩)
+      congrFun hd ⟨i.val, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp i.isLt)⟩)
   · intro hd
     exact funext fun i =>
-      congrFun (List.ofFn_inj.mp hd) ⟨i.1, Nat.lt_succ_iff.mpr (Finset.mem_Iic.mp i.2)⟩
+      congrFun (List.ofFn_inj.mp hd) ⟨i.val, Nat.lt_succ_iff.mpr (Finset.mem_Iic.mp i.property)⟩
 
 /- sanity check: `trajectoryMeasure` is uniquely characterized by the cylinder equation
 in `trajectoryMeasure_cylinder`.
@@ -404,8 +409,8 @@ lemma trajectoryMeasure_unique (π : Policy A O) (μ : Environment A O)
     (m2 : Measure (Destiny A O))
     (hm2 : ∀ (h : History A O), m2 {d | initialSegment A O d h.length = h}
       = ∏ (t : Fin h.length),
-      π (h.take t.1) {(h.get t).1} *
-      μ (h.take t.1) (h.get t).1 {(h.get t).2}) :
+      π (h.take t.val) {(h.get t).1} *
+      μ (h.take t.val) (h.get t).1 {(h.get t).2}) :
     m2 = trajectoryMeasure π μ := by
   -- (1) `m2` agrees with the trajectory measure on every history cylinder
   have hcyl : ∀ h : History A O, m2 {d | initialSegment A O d h.length = h}
@@ -454,24 +459,24 @@ lemma expectedTotalLoss_integrable (L : MomentaryLoss A O) (γ : discount)
   -- Each summand is measurable: it factors through the (discrete, finite) restriction
   -- of the Destiny to its first `t` coordinates.
   have hterm : ∀ t, Measurable
-      (fun h : ℕ → A × O => γ.1 ^ t * (L (initialSegment A O h t)).1) := by
+      (fun h : ℕ → A × O => γ.val ^ t * (L (initialSegment A O h t)).val) := by
     intro t
     apply Measurable.const_mul
-    have hrestr : Measurable (fun (h : ℕ → A × O) (i : Fin t) => h i.1) :=
+    have hrestr : Measurable (fun (h : ℕ → A × O) (i : Fin t) => h i.val) :=
       Measurable.of_eval (fun i => measurable_pi_apply _)
     exact (Measurable.of_discrete
-      (f := fun g : Fin t → (A × O) => (L (List.ofFn g)).1)).comp hrestr
+      (f := fun g : Fin t → (A × O) => (L (List.ofFn g)).val)).comp hrestr
   -- `totalLoss` is measurable as a pointwise limit of the (measurable) partial sums.
   have hmeas : Measurable (fun h : ℕ → A × O => totalLoss L γ h) := by
     have hsum : Measurable (fun h : ℕ → A × O =>
-        ∑' t, γ.1 ^ t * (L (initialSegment A O h t)).1) := by
+        ∑' t, γ.val ^ t * (L (initialSegment A O h t)).val) := by
       exact measurable_of_tendsto_metrizable
         (f := fun N (h : ℕ → A × O) =>
-          ∑ t ∈ Finset.range N, γ.1 ^ t * (L (initialSegment A O h t)).1)
+          ∑ t ∈ Finset.range N, γ.val ^ t * (L (initialSegment A O h t)).val)
         (fun N => Finset.measurable_sum _ (fun t _ => hterm t))
         (tendsto_pi_nhds.mpr fun h =>
           (totalLoss_summable L γ h).hasSum.tendsto_sum_nat)
-    exact hsum.const_mul (1 - γ.1)
+    exact hsum.const_mul (1 - γ.val)
   -- `totalLoss` is bounded in `[0, 1]`.
   have hbound : ∀ h, ‖totalLoss L γ h‖ ≤ 1 := fun h => by
     rw [Real.norm_eq_abs, abs_of_nonneg (totalLoss_nonneg L γ h)]
@@ -570,7 +575,7 @@ lemma measureAfterHist_apply_dist_le (μ : Environment A O) (h : History A O) (z
     ext ⟨a, o⟩; simp [Prod.ext_iff]
   have hk : IsMarkovKernel
       ({ toFun := fun a => (μ h a).toMeasure, measurable' := .of_discrete } : Kernel A O) :=
-    ⟨fun a => (μ h a).2⟩
+    ⟨fun a => (μ h a).property⟩
   have key : ∀ ρ : Policy A O, (measureAfterHist ρ μ h) {(a₀, o₀)}
       = (μ h a₀ : Measure O) {o₀} * ((ρ h) {a₀} : ℝ≥0) := by
     intro ρ
@@ -635,9 +640,9 @@ lemma marginal_succ_dist_le (μ : Environment A O) (k : ℕ)
         simp only [Function.comp_apply, hx]
       · rintro ⟨h1, h2⟩
         funext i
-        rcases eq_or_lt_of_le (Finset.mem_Iic.mp i.2) with hi | hi
+        rcases eq_or_lt_of_le (Finset.mem_Iic.mp i.property) with hi | hi
         · rw [show i = ⟨k + 1, Finset.mem_Iic.mpr le_rfl⟩ from Subtype.ext hi]; exact h2
-        · have := congrFun h1 ⟨i.1, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp hi)⟩
+        · have := congrFun h1 ⟨i.val, Finset.mem_Iic.mpr (Nat.lt_succ_iff.mp hi)⟩
           simpa only [Preorder.frestrictLe_apply, Preorder.frestrictLe₂_apply] using this
     rw [trajectoryMeasure,
       Measure.map_apply (Preorder.measurable_frestrictLe _) (measurableSet_singleton _), hset,
@@ -733,7 +738,8 @@ lemma marginal_apply_tendstoUniformly (n : ℕ) (ω : (i : Finset.Iic n) → A �
       · intro hx; rw [← hx, huniq, uniqueElim_default]
       · intro hx; funext i
         rw [show i = ⟨0, Finset.mem_Iic.mpr le_rfl⟩ from
-          Subtype.ext (Nat.le_zero.mp (Finset.mem_Iic.mp i.2)), huniq, uniqueElim_default, hx,
+          Subtype.ext (Nat.le_zero.mp (Finset.mem_Iic.mp i.property)), huniq, uniqueElim_default,
+            hx,
           huniq]
     rw [Metric.tendstoUniformly_iff]
     intro ε hε

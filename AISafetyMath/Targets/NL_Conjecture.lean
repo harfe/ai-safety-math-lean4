@@ -111,7 +111,7 @@ def swapACProb (P : ProbabilityMeasure (A × B × C)) : ProbabilityMeasure (C ×
 
 noncomputable
 def getBCProb (P : ProbabilityMeasure (A × B × C)) : ProbabilityMeasure (B × C)
-  := ⟨P.1.snd, by
+  := ⟨P.val.snd, by
     constructor
     simp only [ProbabilityMeasure.val_eq_to_measure, measure_univ]
   ⟩
@@ -150,14 +150,14 @@ def chainApproxError (P : ProbabilityMeasure (A × B × C)) : ENNReal :=
   InformationTheory.klDiv P.toMeasure (chainDistr P).toMeasure
 
 /-- conditional entropy: of first component, conditioned on the second.
-Note that `P.1` is the same as `P.toMeasure`.
+Note that `P.val` is the same as `P.toMeasure`.
 While `ENNReal.log 0` is `⊥`, this is not a problem here,
 because `0 * ENNReal.log 0 = 0` in `EReal`, see example below.
 The `tsum`/`∑'` can be converted to `∑` via `tsum_fintype` and `Fintype.ofFinite`.
 -/
 noncomputable
 def condEntropy (P : ProbabilityMeasure (A × B)) : EReal :=
-  - ∑' x, ↑(P.1 {x}) * ENNReal.log (P.1[{y | y.1 = x.1} | {y | y.2 = x.2}])
+  - ∑' x, ↑(P.val {x}) * ENNReal.log (P.val[{y | y.1 = x.1} | {y | y.2 = x.2}])
 
 
 /- confirming that condEntropy is fine -/

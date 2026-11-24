@@ -2,8 +2,6 @@ module
 
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 
-set_option linter.style.header false
-
 /-!
 # The five-test certificate: the real-arithmetic core
 
